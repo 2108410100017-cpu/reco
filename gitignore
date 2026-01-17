@@ -1,0 +1,117 @@
+# -------------------------
+# PYTHON / FASTAPI BACKEND
+# -------------------------
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+*.sqlite
+.env
+venv/
+env/
+.venv/
+pythonenv/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Torch / Models
+*.pt
+*.pth
+*.bin
+*.onnx
+models/
+checkpoints/
+embeddings.pt
+training/embeddings.pt
+training/images/
+
+# Data / CSV / Cache
+*.tsv
+*.json
+*.parquet
+*.pickle
+*.pkl
+*.npz
+*.npy
+
+# Logs
+logs/
+*.log
+
+# -------------------------
+# REACT NATIVE / EXPO FRONTEND
+# -------------------------
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+package-lock.json
+dist/
+build/
+expo-build/
+web-build/
+.expo/
+.expo-shared/
+
+# Metro bundler cache
+.expo/web/cache
+.expo/web/dist
+
+# React Native Android / iOS
+android/
+ios/
+Pods/
+*.xcworkspace
+*.xcuserdata/
+*.xcodeproj/project.xcworkspace
+*.xcodeproj/xcuserdata/
+
+# -------------------------
+# ENV / CREDENTIALS
+# -------------------------
+*.env
+*.env.local
+*.env.production
+*.env.development
+secrets/
+config/
+certs/
+
+# -------------------------
+# SYSTEM FILES
+# -------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# -------------------------
+# VISUAL STUDIO CODE
+# -------------------------
+.vscode/
+.history/
+
+# -------------------------
+# OUTPUT EXPORTS
+# -------------------------
+*.tar
+*.zip
+*.gz
+
+# -------------------------
+# IMAGES / RAW DATA (OPTIONAL)
+# keep if dataset too big
+# -------------------------
+training/images/
+training/mydataset/
+dataset/
+uploads/
+
+# -------------------------
+# CACHE
+# -------------------------
+.cache/
+.tmp/
+.temp/
+__cache__/
