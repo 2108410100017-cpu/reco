@@ -16,6 +16,17 @@ IMAGE_DIR = os.path.join(TRAIN_DIR, "images")
 
 app = FastAPI()
 
+
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # Your React app URL
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # attach images directory
 if os.path.exists(IMAGE_DIR):
     app.mount("/images", StaticFiles(directory=IMAGE_DIR), name="images")
