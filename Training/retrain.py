@@ -8,13 +8,27 @@ from tqdm import tqdm
 IMAGE_DIR = "images"
 CSV_PATH = "styles.csv"
 EMB_PATH = "embeddings.pt"
-META_PATH = "metadata.csv"
+# META_PATH = "metadata.csv"
 BATCH_SIZE = 64
 BAD_ROWS_LOG = "bad_rows.log"
 MAX_ROWS = 2000  # read only first 2000 rows
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 model, preprocess = clip.load("ViT-B/32", device=device)
+
+import argparse
+import os
+
+# Add argument parsing at the beginning of your retrain.py
+parser = argparse.ArgumentParser(description='Retrain the recommendation model')
+parser.add_argument('--metadata', type=str, default='metadata.csv', help='Path to the metadata file')
+args = parser.parse_args()
+
+# Then use args.metadata instead of a hardcoded path
+META_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), args.metadata)
+
+# The rest of your retrain.py code...
+
 
 def encode_image(path):
     img = Image.open(path).convert("RGB")

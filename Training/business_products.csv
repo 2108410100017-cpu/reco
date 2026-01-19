@@ -1,0 +1,4 @@
+id,business_id,name,description,price,image_path,added_date
+59898,12,Blue Shirt,Blue shirt,34.0,images/59898.jpg,2026-01-19 15:19:34
+59899,12,Blue Shirt,Blue shirt,34.0,images/59899.jpg,2026-01-19 15:22:00
+59900,123,Sand T-shirt,Sand T-shirt,23.0,59900.jpg,2026-01-19 15:33:01
