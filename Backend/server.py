@@ -1,5 +1,9 @@
+import sys
+
 import os
 import torch
+import subprocess
+
 import pandas as pd
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
@@ -13,6 +17,7 @@ EMB_PATH = os.path.join(TRAIN_DIR, "embeddings.pt")
 META_PATH = os.path.join(TRAIN_DIR, "metadata.csv")
 STYLES_PATH = os.path.join(TRAIN_DIR, "styles.csv")
 IMAGE_DIR = os.path.join(TRAIN_DIR, "images")
+RETRAIN_SCRIPT_PATH = os.path.join(TRAIN_DIR, "retrain.py")
 
 app = FastAPI()
 
@@ -112,11 +117,38 @@ def get_latest(n: int = 50):
 
 # ---------- Trigger Retrain -----------
 
+
 @app.post("/retrain")
 def retrain():
-    os.system(f"python retrain.py")
-    return {"status": "started"}
+    # Get the path to the python executable that is running this server
+    python_executable = sys.executable
 
+    # Check if the script exists
+    if not os.path.exists(RETRAIN_SCRIPT_PATH):
+        raise HTTPException(status_code=404, detail=f"Retrain script not found at {RETRAIN_SCRIPT_PATH}")
+
+    try:
+        # Use the specific python_executable to run the script
+        # This ensures it uses the same environment with torch, pandas, etc.
+        result = subprocess.run(
+            [python_executable, RETRAIN_SCRIPT_PATH], 
+            check=True, 
+            capture_output=True, 
+            text=True, 
+            cwd=TRAIN_DIR
+        )
+        
+        print("Retrain stdout:", result.stdout)
+        
+        return {"status": "started", "message": "Retraining process initiated successfully."}
+
+    except subprocess.CalledProcessError as e:
+        # This will catch errors if the script itself fails
+        print(f"Error during retrain: {e.stderr}")
+        raise HTTPException(status_code=500, detail=f"Retraining script failed: {e.stderr}")
+    except FileNotFoundError:
+        # This catches the case where sys.executable itself is not found (very rare)
+        raise HTTPException(status_code=500, detail="Python executable not found.")
 
 # ---------- Health Check -----------
 
