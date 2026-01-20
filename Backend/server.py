@@ -211,50 +211,67 @@ def get_image(pid: str):
 
 @app.get("/latest")
 def get_latest(n: int = 50):
-    # Reload business products to get the latest data
-    global business_products
-    business_products = pd.read_csv(BUSINESS_PRODUCTS_PATH)
-    
-    # Create a copy of metadata to avoid modifying the original
-    metadata_copy = metadata.reset_index().copy()
-    
-    # Add a placeholder added_date for regular products (older than any business product)
-    metadata_copy['added_date'] = '1970-01-01 00:00:00'
-    
-    # Combine regular metadata and business products
-    combined_products = pd.concat([metadata_copy, business_products], ignore_index=True)
-    
-    # Sort by added_date in descending order (newest first)
-    combined_products = combined_products.sort_values(by='added_date', ascending=False)
-    
-    # Get the top 'n' items
-    latest_df = combined_products.head(n)
-    
-    # --- KEY FIX: A robust function to create the image_url ---
-    def get_clean_image_url(row):
-        # Check if it's a business product by checking if it has a business_id
-        if 'business_id' in row and pd.notna(row['business_id']):
-            # It's a business product
-            path = row['image_path']
-            # Check if the path already includes 'images/' and avoid double-adding it
-            if path.startswith('images/'):
-                return f"/{path}"
-            else:
-                return f"/images/{path}"
-        else:
-            # It's a regular product, construct the standard URL
-            return f"/images/{row['id']}.jpg"
+    try:
+        print("--- Fetching Latest Products ---")
+        
+        # --- FIX: Use the same loading logic for consistency ---
+        # Reload business products to get the latest data
+        business_products = pd.read_csv(BUSINESS_PRODUCTS_PATH)
+        print(f"Found {len(business_products)} business products.")
+        
+        # Create a copy of the in-memory metadata to avoid modifying the original
+        # We reset the index to ensure a clean concat operation
+        metadata_copy = metadata.reset_index(drop=True).copy()
+        
+        # Add a placeholder added_date for regular products
+        metadata_copy['added_date'] = '1970-01-01 00:00:00'
+        print(f"Found {len(metadata_copy)} original products.")
+        
+        # Combine regular metadata and business products
+        combined_products = pd.concat([metadata_copy, business_products], ignore_index=True)
+        print(f"Combined total products: {len(combined_products)}")
+        
+        # Sort by added_date in descending order (newest first)
+        # Business products will be at the top
+        combined_products = combined_products.sort_values(by='added_date', ascending=False)
+        
+        # Get the top 'n' items
+        latest_df = combined_products.head(n)
+        
+        # --- Robust Image URL Creation ---
+        def get_clean_image_url(row):
+            try:
+                # Check if it's a business product
+                if 'business_id' in row and pd.notna(row['business_id']):
+                    path = row['image_path']
+                    if path.startswith('images/'):
+                        return f"/{path}"
+                    else:
+                        return f"/images/{path}"
+                else:
+                    # It's a regular product
+                    return f"/images/{int(row['id'])}.jpg"
+            except Exception as e:
+                print(f"Error creating image URL for row {row.get('id', 'unknown')}: {e}")
+                return "/images/placeholder.jpg" # Return a placeholder on error
 
-    # Add the image_url to the dataframe using the robust function
-    latest_df['image_url'] = latest_df.apply(get_clean_image_url, axis=1)
+        # Apply the function to create the image_url column
+        latest_df['image_url'] = latest_df.apply(get_clean_image_url, axis=1)
 
-    # Convert to a list of dictionaries for the JSON response
-    result = latest_df.fillna('').to_dict(orient="records")
-    
-    return result
+        # Convert to a list of dictionaries for the JSON response
+        result = latest_df.fillna('').to_dict(orient="records")
+        print(f"Returning {len(result)} latest products.")
+        print("--- Latest Products Fetch Complete ---")
+        
+        return result
+
+    except Exception as e:
+        # Catch any unexpected errors and log them
+        print(f"Error in /latest endpoint: {e}")
+        raise HTTPException(status_code=500, detail=f"An error occurred while fetching latest products: {str(e)}")
+
 
 # --- FIX: Add the missing Cart API Endpoints ---
-
 @app.post("/cart/add", response_model=dict)
 def add_to_cart(product_id: int, quantity: int = 1):
     """Add a product to the cart."""
@@ -264,12 +281,51 @@ def add_to_cart(product_id: int, quantity: int = 1):
 
     cart = carts[cart_id]
     
-    # FIX: Use the indexed metadata for a fast lookup
-    if product_id not in metadata.index:
-        raise HTTPException(status_code=404, detail="Product not found")
+    product = None
+    image_url = ""
+
+    # --- STEP 1: Try to find the product in the in-memory metadata ---
+    if product_id in metadata.index:
+        print(f"Found product {product_id} in in-memory metadata.")
+        product = metadata.loc[product_id]
+        
+        # Determine the image URL
+        if 'business_id' in product and pd.notna(product['business_id']):
+            path = product['image_path']
+            if path.startswith('images/'):
+                image_url = f"/{path}"
+            else:
+                image_url = f"/images/{path}"
+        else:
+            image_url = f"/images/{product_id}.jpg"
     
-    product = metadata.loc[product_id]
-    
+    else:
+        # --- STEP 2: If not in memory, look directly in the business products file ---
+        print(f"Product {product_id} not in memory. Checking business_products.csv...")
+        try:
+            business_df = pd.read_csv(BUSINESS_PRODUCTS_PATH)
+            business_product_rows = business_df[business_df['id'] == product_id]
+            
+            if not business_product_rows.empty:
+                print(f"Found product {product_id} in business_products.csv.")
+                product = business_product_rows.iloc[0]
+                
+                # Construct the image URL for the business product
+                path = product['image_path']
+                if path.startswith('images/'):
+                    image_url = f"/{path}"
+                else:
+                    image_url = f"/images/{path}"
+            else:
+                # --- STEP 3: If still not found, it's a 404 ---
+                raise HTTPException(status_code=404, detail=f"Product with ID {product_id} not found anywhere.")
+        except FileNotFoundError:
+            raise HTTPException(status_code=500, detail="Business products file is missing.")
+        except Exception as e:
+            print(f"Error reading business products file: {e}")
+            raise HTTPException(status_code=500, detail="An error occurred while looking up the product.")
+
+    # Add the item to the cart
     # Check if item is already in cart
     for item in cart["items"]:
         if item["product_id"] == product_id:
@@ -277,14 +333,6 @@ def add_to_cart(product_id: int, quantity: int = 1):
             break
     else:
         # If not in cart, add it
-        image_url = f"/images/{product_id}.jpg"
-        if 'business_id' in product and pd.notna(product['business_id']):
-            path = product['image_path']
-            if path.startswith('images/'):
-                image_url = f"/{path}"
-            else:
-                image_url = f"/images/{path}"
-
         cart["items"].append({
             "product_id": int(product_id),
             "name": product["name"],
