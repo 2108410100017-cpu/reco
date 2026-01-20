@@ -14,6 +14,10 @@ from models import RecommendRequest, BusinessProduct
 from database import get_product_by_id 
 
 router = APIRouter(tags=["products"])
+@router.get("/test")
+def test_endpoint():
+    """A simple test to see if the products router is working."""
+    return {"status": "ok"}
 
 @router.post("/recommend")
 def recommend(req: RecommendRequest):
@@ -91,6 +95,9 @@ def get_latest(n: int = 50):
         print(f"Error in /latest endpoint: {e}")
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
 
+
+
+
 @router.get("/image/{pid}")
 def get_image(pid: str):
     # FIX: Import the function inside the function
@@ -141,3 +148,4 @@ async def add_business_product(
     updated_df.to_csv(BUSINESS_PRODUCTS_PATH, index=False)
     
     return {"id": int(new_id), "status": "success", "message": f"Product added with ID: {new_id}"}
+

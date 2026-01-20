@@ -1,14 +1,29 @@
 // src/App.js
 import React from 'react';
-import { CartProvider } from './contexts/CartContext'; // Import the Provider
-import AppContent from './AppContent'; // Import the component that will USE the cart
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { CartProvider } from './contexts/CartContext';
+
+// Import your page components
+import HomePage from './pages/HomePage';
+import CartPage from './pages/CartPage';
+import SimilarProductsPage from './pages/SimilarProductsPage'; // NEW
+
+// Import the Navigation component
+import Navigation from './components/Navigation';
 
 function App() {
-  // Wrap AppContent with the Provider.
-  // App.js itself does NOT use the cart.
   return (
     <CartProvider>
-      <AppContent />
+      <Router>
+        <div>
+          <Navigation />
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/cart" element={<CartPage />} />
+            <Route path="/similar/:productId" element={<SimilarProductsPage />} /> {/* NEW */}
+          </Routes>
+        </div>
+      </Router>
     </CartProvider>
   );
 }

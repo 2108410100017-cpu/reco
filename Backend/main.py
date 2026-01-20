@@ -6,7 +6,7 @@ import os
 
 from config import IMAGE_DIR
 from database import initialize_data
-from routers import cart, products, admin, debug
+from routers import cart, products, admin, debug, recommendations # NEW IMPORT
 
 # Create the FastAPI app instance
 app = FastAPI(title="Image Recommendation API")
@@ -24,10 +24,16 @@ app.add_middleware(
 if os.path.exists(IMAGE_DIR):
     app.mount("/images", StaticFiles(directory=IMAGE_DIR), name="images")
 
-# Include all routers from the other files
-app.include_router(cart.router)
-app.include_router(products.router)
-app.include_router(admin.router)
+# --- CORRECTED ROUTER INCLUSIONS ---
+# The main products router has NO prefix, so /recommend and /latest work at the root level.
+app.include_router(products.router, tags=["products"])
+
+# The new recommendations router has the /products prefix.
+app.include_router(recommendations.router, prefix="/products", tags=["recommendations"])
+
+# Other routers
+app.include_router(cart.router, prefix="/cart", tags=["cart"])
+app.include_router(admin.router, tags=["admin"])
 app.include_router(debug.router, prefix="/debug", tags=["debug"])
 
 # Initialize data on startup
