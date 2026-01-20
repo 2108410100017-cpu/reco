@@ -21,21 +21,22 @@ def test_endpoint():
 
 @router.post("/recommend")
 def recommend(req: RecommendRequest):
-    # FIX: Import global variables inside the function
+    # Import global variables inside the function
     from database import metadata, id_list, image_embs
 
     import clip
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model, _ = clip.load("ViT-B/32", device=device)
 
+    # --- FIX: Encode the user's text query ---
     tokens = clip.tokenize([req.query]).to(device)
     with torch.no_grad():
-        q = model.encode_text(tokens)
-        q = q / q.norm(dim=-1, keepdim=True)
-    q = q.cpu()
+        text_embedding = model.encode_text(tokens)
+        text_embedding = text_embedding / text_embedding.norm(dim=-1, keepdim=True)
+    text_embedding = text_embedding.cpu()
 
-    # Now image_embs is guaranteed to be initialized
-    sims = (q @ image_embs.T).squeeze(0)
+    # --- Calculate similarity between text and all image embeddings ---
+    sims = (text_embedding @ image_embs.T).squeeze(0)
     top_k = sims.topk(req.top_k)
 
     results = []
@@ -43,7 +44,6 @@ def recommend(req: RecommendRequest):
         pid = id_list[idx]
         
         if pid not in metadata.index:
-            print(f"Warning: Product ID {pid} found in embeddings but not in metadata. Skipping.")
             continue
         
         row = metadata.loc[pid]
@@ -148,4 +148,66 @@ async def add_business_product(
     updated_df.to_csv(BUSINESS_PRODUCTS_PATH, index=False)
     
     return {"id": int(new_id), "status": "success", "message": f"Product added with ID: {new_id}"}
+# In backend/routers/products.py
 
+# Add this new endpoint to the file
+@router.get("/similar/{product_id}")
+def find_similar_products(product_id: int, top_k: int = 10):
+    """
+    Finds products with the most similar image embeddings to the given product_id.
+    """
+    # Import necessary variables inside the function
+    from database import metadata, image_embs, id_list
+    
+    # --- Step 1: Check if the product exists ---
+    if product_id not in metadata.index:
+        raise HTTPException(status_code=404, detail=f"Product with ID {product_id} not found.")
+    
+    # --- Step 2: Get the embedding of the target product ---
+    # We need to find the index of the product_id in our id_list
+    try:
+        target_index = id_list.index(product_id)
+    except ValueError:
+        raise HTTPException(status_code=404, detail=f"Product ID {product_id} not found in trained embeddings.")
+
+    target_embedding = image_embs[target_index]
+    
+    # --- Step 3: Calculate similarity with all products ---
+    # Cosine similarity: (A @ B.T) gives us similarity scores
+    similarity_scores = (target_embedding @ image_embs.T).squeeze(0)
+    
+    # --- Step 4: Get the top-k most similar products ---
+    # We use `torch.topk` to find the indices of the highest scores
+    top_scores, top_indices = similarity_scores.topk(top_k)
+    
+    # --- Step 5: Format the results ---
+    results = []
+    for score, idx in zip(top_scores, top_indices):
+        # The index corresponds to an ID in our id_list
+        similar_pid = id_list[idx]
+        
+        # Skip the product itself if it appears in the results
+        if similar_pid == product_id:
+            continue
+            
+        # Get product details from the metadata
+        row = metadata.loc[similar_pid]
+        price = float(row.get("price", 0.0))
+        if pd.isna(price): price = 0.0
+        
+        image_url = ""
+        if 'business_id' in row and pd.notna(row['business_id']):
+            path = row['image_path']
+            image_url = f"/{path}" if path.startswith('images/') else f"/images/{path}"
+        else:
+            image_url = f"/images/{similar_pid}.jpg"
+            
+        results.append({
+            "id": int(similar_pid),
+            "name": row.get("name", ""),
+            "price": price,
+            "score": float(score), # This is the true similarity score
+            "image_url": image_url
+        })
+
+    return results

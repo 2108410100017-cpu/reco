@@ -11,33 +11,31 @@ const SimilarProductsPage = () => {
     const [isLoading, setIsLoading] = useState(true);
     const API_BASE = "http://localhost:8000";
 
+// In src/pages/SimilarProductsPage.js
+
     useEffect(() => {
         const fetchSimilarProducts = async () => {
             if (!productId) return;
             
             setIsLoading(true);
             try {
-                // First, get the recommendations for the product
-                const response = await axios.post(`${API_BASE}/recommend`, {
-                    query: productId, // Using the ID as a query is a simple way to find similar items
-                    top_k: 10
-                });
+                // --- FIX: Use the new /similar/{id} endpoint ---
+                const response = await axios.get(`${API_BASE}/products/similar/${productId}?top_k=10`);
                 setRecommendations(response.data);
 
-                // Second, get the details of the base product to display
+                // Still get the base product details for display
                 const productResponse = await axios.get(`${API_BASE}/debug/product/${productId}`);
                 setBaseProduct(productResponse.data);
 
             } catch (error) {
                 console.error("Error fetching similar products:", error);
-                // Handle error state
             } finally {
                 setIsLoading(false);
             }
         };
 
         fetchSimilarProducts();
-    }, [productId, API_BASE]);
+    }, [productId, API_BASE]);;
 
     if (isLoading) {
         return <div style={{ padding: "20px", textAlign: "center" }}>Loading similar products...</div>;
