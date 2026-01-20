@@ -2,16 +2,18 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
-import ProductCard from '../components/ProductCard'; // We'll create this reusable component next
+import ProductCard from '../components/ProductCard';
 
 const SimilarProductsPage = () => {
-    const { productId } = useParams(); // Gets the ID from the URL
+    // Get both productId and depth from the URL parameters
+    const { productId, depth: depthParam } = useParams(); 
+    const depth = parseInt(depthParam) || 0; // Default to 0 if not provided
+
     const [recommendations, setRecommendations] = useState([]);
     const [baseProduct, setBaseProduct] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const API_BASE = "http://localhost:8000";
-
-// In src/pages/SimilarProductsPage.js
+    const MAX_DEPTH = 3; // Prevent infinite loops
 
     useEffect(() => {
         const fetchSimilarProducts = async () => {
@@ -19,11 +21,10 @@ const SimilarProductsPage = () => {
             
             setIsLoading(true);
             try {
-                // --- FIX: Use the new /similar/{id} endpoint ---
                 const response = await axios.get(`${API_BASE}/products/similar/${productId}?top_k=10`);
                 setRecommendations(response.data);
 
-                // Still get the base product details for display
+                // Get base product details for display
                 const productResponse = await axios.get(`${API_BASE}/debug/product/${productId}`);
                 setBaseProduct(productResponse.data);
 
@@ -35,11 +36,9 @@ const SimilarProductsPage = () => {
         };
 
         fetchSimilarProducts();
-    }, [productId, API_BASE]);;
+    }, [productId, API_BASE]);
 
-    if (isLoading) {
-        return <div style={{ padding: "20px", textAlign: "center" }}>Loading similar products...</div>;
-    }
+    const showDrillDown = depth < MAX_DEPTH && recommendations.length > 0;
 
     return (
         <div style={{ padding: "20px", fontFamily: 'Arial, sans-serif', backgroundColor: '#f4f7f6' }}>
@@ -49,23 +48,28 @@ const SimilarProductsPage = () => {
                 </Link>
             </div>
 
-            {baseProduct && (
-                <div style={{ textAlign: 'center', marginBottom: '30px', padding: '20px', backgroundColor: '#fff', borderRadius: '8px' }}>
+            {/* Different UI for base page vs drill-down page */}
+            {depth === 0 && baseProduct && (
+                <div style={{ textAlign: 'center', marginBottom: "30px", padding: '20px', backgroundColor: '#fff', borderRadius: '8px' }}>
                     <h2>Because you liked this product:</h2>
                     <ProductCard product={baseProduct.product_info} API_BASE={API_BASE} />
                 </div>
             )}
 
-            <h1 style={{ textAlign: 'center', color: '#333' }}>You Might Also Like</h1>
+            <h1 style={{ textAlign: 'center', color: '#333' }}>
+                {depth === 0 ? 'You Might Also Like' : 'More Similar Products'}
+            </h1>
             
-            {recommendations.length > 0 ? (
+            {isLoading ? (
+                <div style={{ textAlign: 'center', padding: '20px' }}>Loading similar products...</div>
+            ) : recommendations.length > 0 ? (
                 <div style={{ 
                     display: 'grid', 
                     gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', 
                     gap: '20px'
                 }}>
                     {recommendations.map((item) => (
-                        <ProductCard key={item.id} product={item} API_BASE={API_BASE} />
+                        <ProductCard key={item.id} product={item} API_BASE={API_BASE} depth={depth + 1} />
                     ))}
                 </div>
             ) : (
