@@ -5,14 +5,15 @@ const AdminActions = ({ API_BASE }) => {
   const [healthStatus, setHealthStatus] = useState("");
   const [isRetraining, setIsRetraining] = useState(false);
   const [isCheckingHealth, setIsCheckingHealth] = useState(false);
+  const [isAddingPrices, setIsAddingPrices] = useState(false);
   const [retrainMessage, setRetrainMessage] = useState("");
+  const [priceMessage, setPriceMessage] = useState("");
 
   const retrainModel = async () => {
     setIsRetraining(true);
-    setRetrainMessage(""); // Clear previous messages
+    setRetrainMessage("");
     try {
       const response = await axios.post(`${API_BASE}/retrain`);
-      // Provide a user-friendly success message
       setRetrainMessage(`Success: Retraining process started. Server response: ${JSON.stringify(response.data)}`);
     } catch (err) {
       console.error(err);
@@ -24,7 +25,7 @@ const AdminActions = ({ API_BASE }) => {
 
   const checkHealth = async () => {
     setIsCheckingHealth(true);
-    setHealthStatus(""); // Clear previous status
+    setHealthStatus("");
     try {
       const response = await axios.get(`${API_BASE}/health`);
       setHealthStatus(response.data.status || "Healthy");
@@ -33,6 +34,20 @@ const AdminActions = ({ API_BASE }) => {
       setHealthStatus("Unhealthy");
     } finally {
       setIsCheckingHealth(false);
+    }
+  };
+
+  const addPrices = async () => {
+    setIsAddingPrices(true);
+    setPriceMessage("");
+    try {
+      const response = await axios.post(`${API_BASE}/add-prices`);
+      setPriceMessage(`Success: ${response.data.message}`);
+    } catch (err) {
+      console.error(err);
+      setPriceMessage("Error: Failed to add prices. Please check the server logs.");
+    } finally {
+      setIsAddingPrices(false);
     }
   };
 
@@ -45,7 +60,7 @@ const AdminActions = ({ API_BASE }) => {
       <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
         {/* Retrain Model Section */}
         <div style={{ 
-          backgroundColor: '#fff3e0', // Light orange background
+          backgroundColor: '#fff3e0', 
           padding: '20px', 
           borderRadius: '8px', 
           flex: 1, 
@@ -54,7 +69,7 @@ const AdminActions = ({ API_BASE }) => {
         }}>
           <h3 style={{ color: '#e65100', marginTop: 0 }}>Retrain Model</h3>
           <p style={{ fontSize: '14px', color: '#666', marginBottom: '15px' }}>
-            Trigger a retraining of the recommendation model with the latest data. This may take a while.
+            Trigger a retraining of the recommendation model with the latest data.
           </p>
           <button 
             onClick={retrainModel}
@@ -77,7 +92,7 @@ const AdminActions = ({ API_BASE }) => {
               marginTop: '10px', 
               fontSize: '14px',
               color: retrainMessage.startsWith("Error") ? 'red' : 'green',
-              wordBreak: 'break-all' // Prevents long text from overflowing
+              wordBreak: 'break-all'
             }}>
               {retrainMessage}
             </p>
@@ -86,7 +101,7 @@ const AdminActions = ({ API_BASE }) => {
         
         {/* Health Check Section */}
         <div style={{ 
-          backgroundColor: '#f3e5f5', // Light purple background
+          backgroundColor: '#f3e5f5', 
           padding: '20px', 
           borderRadius: '8px', 
           flex: 1, 
@@ -95,7 +110,7 @@ const AdminActions = ({ API_BASE }) => {
         }}>
           <h3 style={{ color: '#4a148c', marginTop: 0 }}>Health Check</h3>
           <p style={{ fontSize: '14px', color: '#666', marginBottom: '15px' }}>
-            Check the status of the API server to ensure it's running correctly.
+            Check the status of the API server.
           </p>
           <button 
             onClick={checkHealth}
@@ -125,6 +140,47 @@ const AdminActions = ({ API_BASE }) => {
                 {healthStatus.toUpperCase()}
               </p>
             </div>
+          )}
+        </div>
+        
+        {/* Add Prices Section */}
+        <div style={{ 
+          backgroundColor: '#e8f5e9', 
+          padding: '20px', 
+          borderRadius: '8px', 
+          flex: 1, 
+          minWidth: '250px',
+          border: '1px solid #a5d6a7'
+        }}>
+          <h3 style={{ color: '#2e7d32', marginTop: 0 }}>Add Prices</h3>
+          <p style={{ fontSize: '14px', color: '#666', marginBottom: '15px' }}>
+            Add price information to all products in the system.
+          </p>
+          <button 
+            onClick={addPrices}
+            disabled={isAddingPrices}
+            style={{ 
+              padding: '10px 20px', 
+              backgroundColor: isAddingPrices ? '#ccc' : '#4CAF50', 
+              color: 'white', 
+              border: 'none', 
+              borderRadius: '4px',
+              cursor: isAddingPrices ? 'not-allowed' : 'pointer',
+              fontSize: '16px',
+              width: '100%'
+            }}
+          >
+            {isAddingPrices ? 'Adding Prices...' : 'Add Prices'}
+          </button>
+          {priceMessage && (
+            <p style={{ 
+              marginTop: '10px', 
+              fontSize: '14px',
+              color: priceMessage.startsWith("Error") ? 'red' : 'green',
+              wordBreak: 'break-all'
+            }}>
+              {priceMessage}
+            </p>
           )}
         </div>
       </div>
