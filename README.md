@@ -4,6 +4,12 @@ A full-stack web application that provides **AI-powered product recommendations*
 
 ---
 
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![React](https://img.shields.io/badge/Frontend-React-61dafb?logo=react&logoColor=white)
+![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688?logo=fastapi&logoColor=white)
+![Python](https://img.shields.io/badge/Language-Python-3776ab?logo=python&logoColor=white)
+
+
 ## 📖 Table of Contents
 
 - [Features](#-features)
