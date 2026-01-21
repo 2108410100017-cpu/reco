@@ -1,159 +1,211 @@
-E-Commerce Recommendation Platform
-A full-stack web application that provides AI-powered product recommendations, a dynamic shopping cart, and a seamless checkout experience. This project demonstrates the integration of a Python/FastAPI backend with a React frontend.
+📦 E-Commerce Recommendation Platform
 
-LicenseReactFastAPIPython
+A full-stack web application that provides AI-powered product recommendations, a dynamic shopping cart, and a clean checkout experience. This project integrates a FastAPI backend with a React frontend for a seamless shopping workflow.
 
-📖 Table of Contents
+📋 Table of Contents
+
 Features
+
 Tech Stack
+
 Project Structure
+
 Prerequisites
+
 Installation & Setup
+
 Usage
+
 API Endpoints
+
 Future Enhancements
+
+License
+
 ✨ Features
-🤖 AI-Powered Recommendations: Get product suggestions based on text queries or similar items.
-🛒 Dynamic Shopping Cart: Add/remove items with real-time updates using React Context.
-🔍 Advanced Search: Find products using natural language queries.
-🛍️ Product Catalog: Browse through random, latest, and similar products.
-💳 Seamless Checkout UI: A complete, frontend-only checkout flow for a smooth user experience.
-➕ Add Products: A dedicated UI for businesses to add new products to the catalog.
-📱 Responsive Design: A clean and modern UI that works on all device sizes.
-🛠️ Tech Stack
+
+🤖 AI-Powered Recommendations — find similar products and search using natural language
+
+🛍 Product Catalog — browse latest, random, and related items
+
+🛒 Dynamic Shopping Cart — add/remove items with React Context state
+
+🔍 Semantic Search — search products through text queries
+
+💳 Seamless Checkout — full mock checkout UI flow
+
+➕ Product Ingestion — UI to add new products to the catalog
+
+📱 Responsive Design — works across desktop, tablet, and mobile
+
+🎯 Modern Frontend + Fast API Integration
+
+🛠 Tech Stack
+
 Frontend
+
 React.js
-React Router for navigation
-Axios for API requests
-React Context for state management
+
+React Router
+
+Axios
+
+React Context
+
 Backend
-FastAPI for the API framework
-Pandas for data manipulation
-Uvicorn for the ASGI server
-Python
-📁 Project Structure
+
+FastAPI
+
+Pandas
+
+Uvicorn
+
+Torch (for embeddings / recommendations)
+
+python-dotenv
+
+Stripe (optional checkout mock)
+
+📂 Project Structure
 .
 ├── backend/
-│ ├── routers/
-│ │ ├── admin.py
-│ │ ├── cart.py
-│ │ ├── debug.py
-│ │ ├── payment.py
-│ │ ├── products.py
-│ │ └── recommendations.py
-│ ├── .env # Environment variables (STRIPE keys)
-│ ├── config.py
-│ ├── database.py
-│ └── main.py # Main FastAPI application
+│   ├── routers/
+│   │   ├── admin.py
+│   │   ├── cart.py
+│   │   ├── debug.py
+│   │   ├── payment.py
+│   │   ├── products.py
+│   │   └── recommendations.py
+│   ├── .env
+│   ├── config.py
+│   ├── database.py
+│   └── main.py
 │
 └── frontend/
-├── public/
-├── src/
-│ ├── components/
-│ │ ├── AddProduct.js
-│ │ ├── CheckoutPage.js
-│ │ ├── MockCheckoutForm.js
-│ │ ├── Navigation.js
-│ │ ├── ProductCard.js
-│ │ ├── ProductsYouLike.js
-│ │ └── ...
-│ ├── contexts/
-│ │ └── CartContext.js
-│ ├── pages/
-│ │ ├── HomePage.js
-│ │ ├── CartPage.js
-│ │ └── SimilarProductsPage.js
-│ ├── App.js
-│ └── index.js
-└── .env # Environment variables (API_BASE)
+    ├── public/
+    └── src/
+        ├── components/
+        │   ├── AddProduct.js
+        │   ├── CheckoutPage.js
+        │   ├── MockCheckoutForm.js
+        │   ├── Navigation.js
+        │   ├── ProductCard.js
+        │   ├── ProductsYouLike.js
+        │   └── ...
+        ├── contexts/
+        │   └── CartContext.js
+        ├── pages/
+        │   ├── HomePage.js
+        │   ├── CartPage.js
+        │   └── SimilarProductsPage.js
+        ├── App.js
+        └── index.js
 
+🚀 Prerequisites
 
+Node.js + npm
 
-## 🚀 Prerequisites
+Python 3.8+
 
-- Node.js and npm
-- Python 3.8+
-- pip
+pip
 
-## 🛠️ Installation & Setup
-
-### 1. Clone the Repository
-
-```bash
+🧩 Installation & Setup
+1. Clone the Repository
 git clone <your-repository-url>
 cd <your-repository-name>
+
 2. Backend Setup
-Navigate to the backend directory:
-bash
+
+Enter the backend folder:
 
 cd backend
-Create and activate a virtual environment:
-bash
+
+
+Create virtual environment:
 
 python -m venv venv
-# On Windows:
-# venv\Scripts\activate
-# On macOS/Linux:
-# source venv/bin/activate
+
+
+Activate environment:
+
+# Windows
+venv\Scripts\activate
+
+# macOS/Linux
+source venv/bin/activate
+
+
 Install dependencies:
-bash
 
 pip install fastapi "uvicorn[standard]" pandas torch python-dotenv stripe
-Note: You can also create a requirements.txt file in the backend directory with the line above and run pip install -r requirements.txt.
-Create environment variables:
-Create a file named .env in the backend directory and add your configuration:
+
+
+Create .env file:
 
 STRIPE_SECRET_KEY=sk_test_...
 STRIPE_PUBLISHABLE_KEY=pk_test_...
-Run the FastAPI server:
-bash
+
+
+Run server:
 
 uvicorn main:app --reload
-The API will be available at http://localhost:8000.
-3. Frontend Setup
-Navigate to the frontend directory:
-bash
 
-cd frontend
+
+Backend runs at:
+
+http://localhost:8000
+
+3. Frontend Setup
+cd ../frontend
+
+
 Install dependencies:
-bash
 
 npm install
-Create environment variables:
-Create a file named .env in the frontend directory and add:
+
+
+Create .env:
 
 REACT_APP_API_BASE=http://localhost:8000
-Run the React development server:
-bash
+
+
+Start dev server:
 
 npm start
-The application will open in your browser at http://localhost:3000.
+
+
+Frontend runs at:
+
+http://localhost:3000
+
 📖 Usage
-Browse Products: View random and latest products on the homepage.
-Get Recommendations: Use the search bar to find products based on a description.
-View Similar Items: Click on any product to see a list of similar items.
-Manage Cart: Click "Add to Cart" on any product. View your cart by clicking the "Cart" link in the navigation.
-Checkout: Click the "Buy" button on any product to go directly to the mock checkout page. Fill out the form and complete the purchase.
-Add a Product: Use the "Add Product" link in the navigation to access the form for adding new items to the catalog.
+
+✔ Browse products on homepage
+✔ Add items to cart
+✔ Checkout using UI form
+✔ Search for items via text
+✔ View similar items from product page
+✔ Add new products through admin UI
+
 🔗 API Endpoints
-Here are some of the key API endpoints available:
+Method	Endpoint	Description
+GET	/latest	Fetch latest products
+GET	/products/random?n=12	Fetch random products
+GET	/products/{id}	Fetch product by ID
+POST	/cart/add	Add item to cart
+GET	/cart	Get cart contents
+POST	/recommend	Get text-based recommendations
+GET	/products/similar/{id}	Find similar products
+🚧 Future Enhancements
 
-Method
-Endpoint
-Description
-GET	/latest	Fetches the latest products.
-GET	/products/random?n=12	Fetches a list of random products.
-GET	/products/{id}	Fetches a single product by its ID.
-POST	/cart/add	Adds a product to the shopping cart.
-GET	/cart	Retrieves the current shopping cart.
-POST	/recommend	Gets recommendations based on a query.
-GET	/products/similar/{id}	Gets products similar to a given ID.
+Full Stripe checkout & webhooks
 
-🚀 Future Enhancements
-Real Payment Integration: Implement full Stripe payment processing with webhooks.
-User Authentication: Add user accounts and order history.
-Admin Dashboard: Create a comprehensive admin panel for managing products and orders.
-Database Integration: Replace CSV files with a persistent database like PostgreSQL or MongoDB.
-Review and Rating System: Allow users to review and rate products.
+User authentication & profiles
 
-Enter your code here...
+Admin dashboard for product management
+
+Replace CSV with PostgreSQL / MongoDB
+
+Review & rating system
+
+Personalized embeddings per user history
