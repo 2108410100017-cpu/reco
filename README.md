@@ -1,72 +1,56 @@
-📦 E-Commerce Recommendation Platform
+# 📦 E-Commerce Recommendation Platform
 
-A full-stack web application that provides AI-powered product recommendations, a dynamic shopping cart, and a clean checkout experience. This project integrates a FastAPI backend with a React frontend for a seamless shopping workflow.
+A full-stack web application that provides **AI-powered product recommendations**, a dynamic shopping cart, and a modern checkout flow using **FastAPI + React**.
 
-📋 Table of Contents
+---
 
-Features
+## 📖 Table of Contents
 
-Tech Stack
+- [Features](#-features)
+- [Tech Stack](#-tech-stack)
+- [Project-Structure](#-project-structure)
+- [Prerequisites](#-prerequisites)
+- [Installation--Setup](#-installation--setup)
+- [Usage](#-usage)
+- [API Endpoints](#-api-endpoints)
+- [Future Enhancements](#-future-enhancements)
+- [License](#-license)
 
-Project Structure
+---
 
-Prerequisites
+## ✨ Features
 
-Installation & Setup
+- 🤖 **AI Recommendations**
+- 🔍 **Semantic Search**
+- 🛍 **Product Catalog**
+- 🛒 **React Shopping Cart**
+- 💳 **Checkout UI**
+- ➕ **Add Product Form**
+- 📱 **Responsive Design**
 
-Usage
+---
 
-API Endpoints
+## 🛠 Tech Stack
 
-Future Enhancements
+### **Frontend**
+- React.js
+- React Router
+- Axios
+- React Context
 
-License
+### **Backend**
+- FastAPI
+- Pandas
+- Torch
+- Uvicorn
+- python-dotenv
+- Stripe (mock)
 
-✨ Features
+---
 
-🤖 AI-Powered Recommendations — find similar products and search using natural language
+## 📁 Project Structure
 
-🛍 Product Catalog — browse latest, random, and related items
-
-🛒 Dynamic Shopping Cart — add/remove items with React Context state
-
-🔍 Semantic Search — search products through text queries
-
-💳 Seamless Checkout — full mock checkout UI flow
-
-➕ Product Ingestion — UI to add new products to the catalog
-
-📱 Responsive Design — works across desktop, tablet, and mobile
-
-🎯 Modern Frontend + Fast API Integration
-
-🛠 Tech Stack
-
-Frontend
-
-React.js
-
-React Router
-
-Axios
-
-React Context
-
-Backend
-
-FastAPI
-
-Pandas
-
-Uvicorn
-
-Torch (for embeddings / recommendations)
-
-python-dotenv
-
-Stripe (optional checkout mock)
-
-📂 Project Structure
+```
 .
 ├── backend/
 │   ├── routers/
@@ -91,7 +75,6 @@ Stripe (optional checkout mock)
         │   ├── Navigation.js
         │   ├── ProductCard.js
         │   ├── ProductsYouLike.js
-        │   └── ...
         ├── contexts/
         │   └── CartContext.js
         ├── pages/
@@ -100,112 +83,129 @@ Stripe (optional checkout mock)
         │   └── SimilarProductsPage.js
         ├── App.js
         └── index.js
+```
 
-🚀 Prerequisites
+---
 
-Node.js + npm
+## 🚀 Prerequisites
 
-Python 3.8+
+- Node.js + npm
+- Python 3.8+
+- pip
 
-pip
+---
 
-🧩 Installation & Setup
-1. Clone the Repository
+## 🛠 Installation & Setup
+
+### **1. Clone Repository**
+
+```bash
 git clone <your-repository-url>
-cd <your-repository-name>
+cd <your-folder>
+```
 
-2. Backend Setup
+### **2. Backend Setup**
 
-Enter the backend folder:
-
+```bash
 cd backend
-
-
-Create virtual environment:
-
 python -m venv venv
+```
 
+Activate env:
 
-Activate environment:
-
+```bash
 # Windows
 venv\Scripts\activate
 
 # macOS/Linux
 source venv/bin/activate
-
+```
 
 Install dependencies:
 
+```bash
 pip install fastapi "uvicorn[standard]" pandas torch python-dotenv stripe
+```
 
+Create `.env`:
 
-Create .env file:
-
+```
 STRIPE_SECRET_KEY=sk_test_...
 STRIPE_PUBLISHABLE_KEY=pk_test_...
-
+```
 
 Run server:
 
+```bash
 uvicorn main:app --reload
+```
 
+Backend available at:
 
-Backend runs at:
+> http://localhost:8000
 
-http://localhost:8000
+---
 
-3. Frontend Setup
+### **3. Frontend Setup**
+
+```bash
 cd ../frontend
-
-
-Install dependencies:
-
 npm install
+```
 
+Create `.env`:
 
-Create .env:
-
+```
 REACT_APP_API_BASE=http://localhost:8000
+```
 
+Run dev server:
 
-Start dev server:
-
+```bash
 npm start
+```
 
+Frontend available at:
 
-Frontend runs at:
+> http://localhost:3000
 
-http://localhost:3000
+---
 
-📖 Usage
+## 📖 Usage
 
-✔ Browse products on homepage
-✔ Add items to cart
-✔ Checkout using UI form
-✔ Search for items via text
-✔ View similar items from product page
-✔ Add new products through admin UI
+- Browse products
+- Search similar products
+- Add to cart
+- Checkout UI flow
+- Add new products from UI
 
-🔗 API Endpoints
-Method	Endpoint	Description
-GET	/latest	Fetch latest products
-GET	/products/random?n=12	Fetch random products
-GET	/products/{id}	Fetch product by ID
-POST	/cart/add	Add item to cart
-GET	/cart	Get cart contents
-POST	/recommend	Get text-based recommendations
-GET	/products/similar/{id}	Find similar products
-🚧 Future Enhancements
+---
 
-Full Stripe checkout & webhooks
+## 🔗 API Endpoints
 
-User authentication & profiles
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/latest` | Fetch latest products |
+| GET | `/products/random?n=12` | Fetch random products |
+| GET | `/products/{id}` | Get product by ID |
+| POST | `/cart/add` | Add item to cart |
+| GET | `/cart` | Get cart items |
+| POST | `/recommend` | Text recommendations |
+| GET | `/products/similar/{id}` | Similar items |
 
-Admin dashboard for product management
+---
 
-Replace CSV with PostgreSQL / MongoDB
+## 🚧 Future Enhancements
 
-Review & rating system
+- Full Stripe checkout
+- User authentication
+- Admin dashboard
+- Database migration (Postgres/MongoDB)
+- Reviews & ratings
+- Personalized recommendations
 
-Personalized embeddings per user history
+---
+
+## 📜 License
+
+MIT License
