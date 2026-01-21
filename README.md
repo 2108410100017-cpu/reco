@@ -210,6 +210,3 @@ Frontend available at:
 
 ---
 
-## 📜 License
-
-MIT License
