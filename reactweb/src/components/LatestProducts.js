@@ -2,14 +2,12 @@
 
 import React, { useState } from "react";
 import axios from "axios";
-import { useCart } from '../contexts/CartContext'; // 1. Import is correct, it stays here at the top.
-
-// WRONG: This is where the error is. Calling the hook outside the function.
-// const { addToCart } = useCart(); 
+import { useNavigate } from 'react-router-dom'; // 1. Import useNavigate
+import { useCart } from '../contexts/CartContext';
 
 function LatestProducts({ API_BASE }) {
-    // CORRECT: The hook MUST be called inside the function, like this.
     const { addToCart } = useCart(); 
+    const navigate = useNavigate(); // 2. Initialize navigate
 
     const [latestData, setLatestData] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -25,6 +23,11 @@ function LatestProducts({ API_BASE }) {
         } finally {
             setIsLoading(false);
         }
+    };
+
+    // 3. Create the handleBuyNow function
+    const handleBuyNow = (product) => {
+        navigate(`/checkout/${product.id}`, { state: { product } });
     };
 
     return (
@@ -99,7 +102,7 @@ function LatestProducts({ API_BASE }) {
                                         Category: {item.category}
                                     </p>
                                 )}
-                                <div style={{ marginTop: 'auto', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div style={{ marginTop: 'auto', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
                                     <p style={{ 
                                         margin: 0, 
                                         fontSize: '18px', 
@@ -108,19 +111,35 @@ function LatestProducts({ API_BASE }) {
                                     }}>
                                         ${item.price ? item.price.toFixed(2) : '0.00'}
                                     </p>
-                                    <button 
-                                        onClick={() => addToCart(item)} // The hook is used here
-                                        style={{
-                                            padding: '6px 12px',
-                                            backgroundColor: '#FF9800',
-                                            color: 'white',
-                                            border: 'none',
-                                            borderRadius: '4px',
-                                            cursor: 'pointer'
-                                        }}
-                                    >
-                                        Add to Cart
-                                    </button>
+                                    <div style={{ display: 'flex', gap: '8px' }}>
+                                        <button 
+                                            onClick={() => addToCart(item)}
+                                            style={{
+                                                padding: '6px 12px',
+                                                backgroundColor: '#FF9800',
+                                                color: 'white',
+                                                border: 'none',
+                                                borderRadius: '4px',
+                                                cursor: 'pointer'
+                                            }}
+                                        >
+                                            Add to Cart
+                                        </button>
+                                        {/* 4. Add the new "Buy" button */}
+                                        <button 
+                                            onClick={() => handleBuyNow(item)}
+                                            style={{
+                                                padding: '6px 12px',
+                                                backgroundColor: '#4CAF50',
+                                                color: 'white',
+                                                border: 'none',
+                                                borderRadius: '4px',
+                                                cursor: 'pointer'
+                                            }}
+                                        >
+                                            Buy
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         ))}
