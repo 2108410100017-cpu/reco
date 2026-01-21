@@ -7,7 +7,7 @@ from config import carts, DEFAULT_CART_ID, BUSINESS_PRODUCTS_PATH
 from models import Cart
 from database import get_product_by_id
 
-router = APIRouter(prefix="/cart", tags=["cart"])
+router = APIRouter(tags=["cart"])
 
 @router.post("/add", response_model=dict)
 def add_to_cart(product_id: int, quantity: int = 1):
