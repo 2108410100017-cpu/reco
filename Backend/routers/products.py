@@ -7,7 +7,7 @@ import shutil
 import os
 from datetime import datetime
 from typing import Optional
-
+from fastapi import Request
 from config import IMAGE_DIR, BUSINESS_PRODUCTS_PATH
 from models import RecommendRequest, BusinessProduct
 # FIX: Only import the function, not the global variables
@@ -211,3 +211,24 @@ def find_similar_products(product_id: int, top_k: int = 10):
         })
 
     return results
+
+
+@router.get("/debug/product/{product_id}")
+def debug_product(product_id: int, request: Request):
+    try:
+        metadata = request.app.state.product_metadata
+
+        row = metadata.loc[metadata['id'] == product_id]
+        if row.empty:
+            return {"error": f"Product {product_id} not found in metadata"}
+
+        item = row.iloc[0]
+
+        return {
+            "id": int(item['id']),
+            "name": item.get('name', None),
+            "price": float(item.get('price', 0.0)),
+            "image_url": f"/images/{item['id']}.jpg"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

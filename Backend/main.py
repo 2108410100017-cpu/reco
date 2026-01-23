@@ -3,15 +3,16 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 import os
-from routers import reviews_clean
-from config import IMAGE_DIR
-from database import initialize_data
-from routers import cart, products, admin, debug, recommendations # NEW IMPORT
+import pandas as pd
 
-# Create the FastAPI app instance
+from config import IMAGE_DIR, COMBINED_METADATA_PATH
+from database import initialize_data
+from routers import cart, products, admin, debug, recommendations, reviews_clean
+
 app = FastAPI(title="Image Recommendation API")
 
-# Add CORS middleware
+
+# ---- CORS ----
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],
@@ -20,24 +21,44 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mount static files
+
+# ---- STATIC IMAGES ----
 if os.path.exists(IMAGE_DIR):
     app.mount("/images", StaticFiles(directory=IMAGE_DIR), name="images")
 
-# --- CORRECTED ROUTER INCLUSIONS ---
-# The main products router has NO prefix, so /recommend and /latest work at the root level.
+
+# ---- STARTUP LOADS METADATA & EMBEDDINGS ----
+@app.on_event("startup")
+def startup_event():
+    print(">>> STARTUP: Loading metadata...")
+
+    try:
+        if os.path.exists(COMBINED_METADATA_PATH):
+            df = pd.read_csv(COMBINED_METADATA_PATH)
+            df['id'] = df['id'].astype(int)
+            app.state.product_metadata = df
+            print(f">>> Metadata loaded: {len(df)} products")
+        else:
+            print(">>> WARNING: Metadata file missing:", COMBINED_METADATA_PATH)
+            app.state.product_metadata = None
+
+    except Exception as e:
+        print(">>> ERROR loading metadata:", e)
+        app.state.product_metadata = None
+
+    initialize_data()
+    print(">>> Startup complete.")
+
+
+# ---- ROUTERS ----
 app.include_router(products.router, tags=["products"])
-
-# The new recommendations router has the /products prefix.
 app.include_router(recommendations.router, prefix="/products", tags=["recommendations"])
-
-# Other routers
 app.include_router(cart.router, prefix="/cart", tags=["cart"])
 app.include_router(admin.router, tags=["admin"])
 app.include_router(debug.router, prefix="/debug", tags=["debug"])
 app.include_router(reviews_clean.router, tags=["reviews-clean"])
 
-# Initialize data on startup
-@app.on_event("startup")
-def on_startup():
-    initialize_data()
+
+@app.get("/")
+def root():
+    return {"status": "ok", "msg": "Recommendation API online"}
