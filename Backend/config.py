@@ -13,6 +13,8 @@ RETRAIN_SCRIPT_PATH = os.path.join(TRAIN_DIR, "retrain.py")
 ADD_PRICES_SCRIPT_PATH = os.path.join(TRAIN_DIR, "add_prices.py")
 BUSINESS_PRODUCTS_PATH = os.path.join(TRAIN_DIR, "business_products.csv")
 COMBINED_METADATA_PATH = os.path.join(TRAIN_DIR, "combined_metadata.csv")
+TRAINING_DIR_ABS = os.path.abspath(TRAIN_DIR)
+REVIEWS_PATH = os.path.join(TRAINING_DIR_ABS, "reviews.csv") # Absolute path to reviews.csv
 
 # --- Global State ---
 carts = {}
