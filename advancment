@@ -1,0 +1,109 @@
+1️⃣ User Experience / Frontend Improvements
+
+Product detail modal/page:
+Clicking on a product image opens a detailed view with:
+
+Full description, images carousel, price, category, stock availability.
+
+Reviews and ratings section (already mostly done).
+
+Add-to-cart and Buy buttons right there.
+
+Filter & Sorting options:
+For recommendations or latest products:
+
+Sort by price, rating, newest, popularity.
+
+Filter by category, price range, rating, etc.
+
+Pagination / Infinite scroll:
+If you have a lot of products, don’t show them all at once. Load in pages or lazy-load as the user scrolls.
+
+Hover effects / UI polish:
+Slight animations, hover effects on product cards, buttons changing color, image zoom on hover, etc.
+
+2️⃣ Reviews & Ratings Enhancements
+
+Show average rating & number of reviews on each product card.
+
+Star rating component improvements:
+
+Make stars clickable so users can rate directly on the card.
+
+Review sorting/filtering:
+
+Most helpful, most recent, highest/lowest rating.
+
+User avatars or names:
+
+Show who wrote the review (fake or real usernames).
+
+3️⃣ Recommendation System Improvements
+
+Dynamic recommendations:
+
+Show “People who bought this also bought…” or “Similar trending products”.
+
+Personalized recommendations:
+
+If you implement user accounts, track their history and recommend based on their activity.
+
+Recommendation explanations:
+
+Show why a product was recommended (e.g., “Similar color/style” or “Based on your recent searches”).
+
+4️⃣ Cart & Checkout Enhancements
+
+Cart page:
+
+View all added products, adjust quantity, remove items, see total.
+
+Persistent cart:
+
+Store cart in localStorage or user account.
+
+Buy button integration:
+
+Redirects to a checkout page with payment (can be mocked initially).
+
+5️⃣ Backend Improvements
+
+Search API enhancements:
+
+Full-text search or fuzzy search for product names and descriptions.
+
+Caching & performance:
+
+Cache recommendations for repeated queries for faster response.
+
+Product metadata:
+
+Stock availability, SKU, multiple images, categories, brand.
+
+User authentication:
+
+Register/login to store reviews, cart, and personal recommendations.
+
+6️⃣ Analytics & Logging
+
+Track what products are clicked, viewed, or purchased.
+
+Track which recommendations are actually clicked (to improve algorithm later).
+
+7️⃣ Optional Fun Features
+
+Wishlist / Favorites
+
+Users can save products for later.
+
+Recently viewed products
+
+Carousel showing products the user has looked at.
+
+Product comparison feature
+
+Compare 2–3 products side by side.
+
+Dark mode toggle
+
+Nice-to-have for UI polish.

@@ -1,0 +1,6 @@
+timestamp,event_type,product_id,user_id
+2026-01-21T10:00:00Z,product_view,101,user-a
+2026-01-21T10:02:00Z,product_view,101,user-a
+2026-01-21T10:05:00Z,add_to_cart,101,user-a
+2026-01-21T10:06:00Z,purchase,101,user-a
+2026-01-21T10:07:00Z,product_view,102,user-b
