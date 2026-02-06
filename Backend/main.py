@@ -1,17 +1,23 @@
-# backend/main.py
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 import os
+
 from routers import reviews_clean
 from config import IMAGE_DIR
 from database import initialize_data
-from routers import cart, products, admin, debug, recommendations # NEW IMPORT
+from routers import cart, products, admin, debug, recommendations
 
-# Create the FastAPI app instance
+
+# -------------------------------
+# APP INIT
+# -------------------------------
 app = FastAPI(title="Image Recommendation API")
 
-# Add CORS middleware
+
+# -------------------------------
+# CORS
+# -------------------------------
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],
@@ -20,16 +26,51 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mount static files
+
+# -------------------------------
+# USER IDENTITY MIDDLEWARE (NEW)
+# -------------------------------
+@app.middleware("http")
+async def attach_user_identity(request: Request, call_next):
+    """
+    Centralized user identity handling.
+
+    Priority:
+    1. Frontend header: X-User-ID
+    2. Fallback: 'guest'
+    """
+
+    user_id = request.headers.get("X-User-ID")
+
+    if user_id:
+        request.state.user_id = user_id.strip().lower()
+    else:
+        request.state.user_id = "guest"
+
+    response = await call_next(request)
+    return response
+
+
+# -------------------------------
+# STATIC IMAGES
+# -------------------------------
 if os.path.exists(IMAGE_DIR):
     app.mount("/images", StaticFiles(directory=IMAGE_DIR), name="images")
 
-# --- CORRECTED ROUTER INCLUSIONS ---
-# The main products router has NO prefix, so /recommend and /latest work at the root level.
+
+# -------------------------------
+# ROUTERS
+# -------------------------------
+
+# Core products router
 app.include_router(products.router, tags=["products"])
 
-# The new recommendations router has the /products prefix.
-app.include_router(recommendations.router, prefix="/products", tags=["recommendations"])
+# Recommendation router
+app.include_router(
+    recommendations.router,
+    prefix="/products",
+    tags=["recommendations"]
+)
 
 # Other routers
 app.include_router(cart.router, prefix="/cart", tags=["cart"])
@@ -37,7 +78,10 @@ app.include_router(admin.router, tags=["admin"])
 app.include_router(debug.router, prefix="/debug", tags=["debug"])
 app.include_router(reviews_clean.router, tags=["reviews-clean"])
 
-# Initialize data on startup
+
+# -------------------------------
+# STARTUP INIT
+# -------------------------------
 @app.on_event("startup")
 def on_startup():
     initialize_data()

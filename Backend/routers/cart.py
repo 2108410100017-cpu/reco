@@ -1,37 +1,76 @@
-# backend/routers/cart.py
-from fastapi import APIRouter, HTTPException, Form
+from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import JSONResponse
 import pandas as pd
-import os
-from config import carts, DEFAULT_CART_ID, BUSINESS_PRODUCTS_PATH
+
+from config import carts
 from models import Cart
 from database import get_product_by_id
 
 router = APIRouter(tags=["cart"])
 
+
+# ----------------------------------
+# USER ID RESOLUTION (ROBUST)
+# ----------------------------------
+def get_user_id(request: Request):
+    """
+    User identity priority:
+
+    1️⃣ Frontend header: X-User-ID
+    2️⃣ Fallback → guest user
+
+    Ensures:
+    - No shared cart accidentally
+    - No empty user_id
+    """
+
+    user_id = request.headers.get("X-User-ID")
+
+    if not user_id or user_id.strip() == "":
+        user_id = "guest"
+
+    return user_id.strip()
+
+
+# ----------------------------------
+# DEBUG LOGGER (IMPORTANT)
+# ----------------------------------
+def log_cart_debug(user_id):
+    print("\n===== CART DEBUG =====")
+    print("User ID:", user_id)
+    print("Active carts:", list(carts.keys()))
+    print("======================\n")
+
+
+# ----------------------------------
+# ADD TO CART
+# ----------------------------------
 @router.post("/add", response_model=dict)
-def add_to_cart(product_id: int, quantity: int = 1):
-    """Add a product to the cart."""
-    if DEFAULT_CART_ID not in carts:
-        carts[DEFAULT_CART_ID] = {"items": [], "total_price": 0.0}
+def add_to_cart(request: Request, product_id: int, quantity: int = 1):
 
-    cart = carts[DEFAULT_CART_ID]
-    
-    # FIX: The function returns a pandas Series. Check if it's None.
+    user_id = get_user_id(request)
+    log_cart_debug(user_id)
+
+    if user_id not in carts:
+        carts[user_id] = {"items": [], "total_price": 0.0}
+
+    cart = carts[user_id]
+
     product = get_product_by_id(product_id)
-    
-    # FIX: Use an explicit check for None
     if product is None:
-        raise HTTPException(status_code=404, detail=f"Product with ID {product_id} not found.")
+        raise HTTPException(
+            status_code=404,
+            detail=f"Product with ID {product_id} not found."
+        )
 
-    image_url = ""
-    # product is now a pandas Series, so you can access columns with .column_name
+    # Image URL handling
     if 'business_id' in product and pd.notna(product['business_id']):
         path = product['image_path']
         image_url = f"/{path}" if path.startswith('images/') else f"/images/{path}"
     else:
         image_url = f"/images/{product_id}.jpg"
 
+    # Add / update quantity
     for item in cart["items"]:
         if item["product_id"] == product_id:
             item["quantity"] += quantity
@@ -45,34 +84,78 @@ def add_to_cart(product_id: int, quantity: int = 1):
             "image_url": image_url
         })
 
-    cart["total_price"] = sum(item["price"] * item["quantity"] for item in cart["items"])
-    return {"status": "success", "message": f"Added {product['name']} to cart."}
+    cart["total_price"] = sum(
+        item["price"] * item["quantity"]
+        for item in cart["items"]
+    )
 
+    return {
+        "status": "success",
+        "message": f"Added {product['name']} to cart."
+    }
+
+
+# ----------------------------------
+# GET CART
+# ----------------------------------
 @router.get("/", response_model=Cart)
-def get_cart():
-    """Get the current cart contents."""
-    if DEFAULT_CART_ID not in carts:
+def get_cart(request: Request):
+
+    user_id = get_user_id(request)
+    log_cart_debug(user_id)
+
+    if user_id not in carts:
         return {"items": [], "total_price": 0.0}
-    return carts[DEFAULT_CART_ID]
 
+    return carts[user_id]
+
+
+# ----------------------------------
+# REMOVE ITEM
+# ----------------------------------
 @router.delete("/item/{product_id}", response_model=dict)
-def remove_from_cart(product_id: int):
-    """Remove an item from the cart."""
-    if DEFAULT_CART_ID not in carts:
+def remove_from_cart(request: Request, product_id: int):
+
+    user_id = get_user_id(request)
+    log_cart_debug(user_id)
+
+    if user_id not in carts:
         raise HTTPException(status_code=404, detail="Cart not found")
-    
-    cart = carts[DEFAULT_CART_ID]
+
+    cart = carts[user_id]
+
     initial_length = len(cart["items"])
-    cart["items"] = [item for item in cart["items"] if item["product_id"] != product_id]
-    
+    cart["items"] = [
+        item for item in cart["items"]
+        if item["product_id"] != product_id
+    ]
+
     if len(cart["items"]) == initial_length:
-        raise HTTPException(status_code=404, detail="Item not found in cart")
+        raise HTTPException(status_code=404, detail="Item not found")
 
-    cart["total_price"] = sum(item["price"] * item["quantity"] for item in cart["items"])
-    return {"status": "success", "message": "Item removed from cart."}
+    cart["total_price"] = sum(
+        item["price"] * item["quantity"]
+        for item in cart["items"]
+    )
 
+    return {
+        "status": "success",
+        "message": "Item removed from cart."
+    }
+
+
+# ----------------------------------
+# CLEAR CART
+# ----------------------------------
 @router.post("/clear", response_model=dict)
-def clear_cart():
-    """Clear all items from the cart."""
-    carts[DEFAULT_CART_ID] = {"items": [], "total_price": 0.0}
-    return {"status": "success", "message": "Cart cleared."}
+def clear_cart(request: Request):
+
+    user_id = get_user_id(request)
+    log_cart_debug(user_id)
+
+    carts[user_id] = {"items": [], "total_price": 0.0}
+
+    return {
+        "status": "success",
+        "message": "Cart cleared."
+    }

@@ -17,8 +17,8 @@ const LoginPage = () => {
       return;
     }
 
-    // Save logged user
-    localStorage.setItem("logged_user", userId);
+    // ⭐ FIXED — unified identity key
+    localStorage.setItem("user_id", userId);
 
     alert(`Logged in as ${userId}`);
     navigate("/");

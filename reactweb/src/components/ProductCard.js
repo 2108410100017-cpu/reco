@@ -7,8 +7,12 @@ import ProductReviews from "./ProductReviews";
 const ProductCard = ({ product, API_BASE, depth = 0 }) => {
     const { addToCart } = useCart();
     const navigate = useNavigate();
-
     const [showReviews, setShowReviews] = useState(false);
+
+    // ⭐ CRITICAL FIX: Prevent crash if product undefined
+    if (!product || !product.id) {
+        return null;
+    }
 
     const handleBuyNow = (productToBuy) => {
         navigate(`/checkout/${productToBuy.id}`, { state: { product: productToBuy } });
@@ -34,22 +38,22 @@ const ProductCard = ({ product, API_BASE, depth = 0 }) => {
 
     return (
         <div style={cardStyle}>
-            {/* Clickable product content */}
             <Link
                 to={`/similar/${product.id}?depth=${depth + 1}`}
                 style={{ textDecoration: 'none', color: 'inherit', flexGrow: 1 }}
             >
                 <img
                     src={`${API_BASE}${product.image_url}`}
-                    alt={product.name}
+                    alt={product.name || "Product"}
                     style={imageStyle}
                     onError={(e) => {
                         e.target.src = `https://picsum.photos/seed/${product.id}/200/200`;
                     }}
                 />
 
-                <h4>{product.name}</h4>
+                <h4>{product.name || "Unnamed Product"}</h4>
                 <p>ID: {product.id}</p>
+
                 <p style={priceStyle}>
                     ${product.price?.toFixed(2) || "0.00"}
                 </p>
@@ -57,30 +61,20 @@ const ProductCard = ({ product, API_BASE, depth = 0 }) => {
 
             {/* Buttons */}
             <div style={buttonRow}>
-                <button
-                    onClick={(e) => handleAddToCart(e, product)}
-                    style={cartBtn}
-                >
+                <button onClick={(e) => handleAddToCart(e, product)} style={cartBtn}>
                     Add Cart
                 </button>
 
-                <button
-                    onClick={(e) => handleBuyClick(e, product)}
-                    style={buyBtn}
-                >
+                <button onClick={(e) => handleBuyClick(e, product)} style={buyBtn}>
                     Buy
                 </button>
 
-                {/* NEW REVIEW BUTTON */}
-                <button
-                    onClick={toggleReviews}
-                    style={reviewBtn}
-                >
+                <button onClick={toggleReviews} style={reviewBtn}>
                     ⭐ Review
                 </button>
             </div>
 
-            {/* Reviews Section */}
+            {/* Reviews */}
             {showReviews && (
                 <ProductReviews
                     productId={product.id}

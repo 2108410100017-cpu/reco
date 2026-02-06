@@ -3,7 +3,6 @@ from pydantic import BaseModel
 import pandas as pd
 import os
 import random
-import uuid
 from datetime import datetime
 from config import REVIEWS_PATH
 
@@ -11,30 +10,33 @@ from config import REVIEWS_PATH
 # -------------------------------
 # Synthetic User Pool
 # -------------------------------
-
 USER_POOL = [f"user-{i:03d}" for i in range(1, 201)]
 
 
 # -------------------------------
-# Pydantic Model
+# Review Model
 # -------------------------------
-
 class ReviewIn(BaseModel):
     product_id: int
     rating: int
     comment: str
-    user_id: str | None = None   # frontend login user
+    user_id: str | None = None
 
 
 router = APIRouter(prefix="/reviews-clean", tags=["reviews-clean"])
 
 
 # -------------------------------
-# Helper Functions
+# Helpers
 # -------------------------------
+def normalize_user(user_id: str | None):
+    if not user_id:
+        return random.choice(USER_POOL)
+    return str(user_id).strip().lower()
+
 
 def load_reviews():
-    """Load or create reviews CSV."""
+    """Load or initialize review storage."""
     if not os.path.exists(REVIEWS_PATH):
         os.makedirs(os.path.dirname(REVIEWS_PATH), exist_ok=True)
 
@@ -44,25 +46,33 @@ def load_reviews():
         df.to_csv(REVIEWS_PATH, index=False)
         return df
 
-    return pd.read_csv(REVIEWS_PATH)
+    df = pd.read_csv(REVIEWS_PATH)
+
+    # Ensure consistent types
+    if "user_id" in df.columns:
+        df["user_id"] = df["user_id"].astype(str)
+
+    return df
 
 
 def save_reviews(df):
     df.to_csv(REVIEWS_PATH, index=False)
 
 
+def next_review_id(df):
+    if df.empty:
+        return 1
+    return int(pd.to_numeric(df["id"], errors="coerce").max()) + 1
+
+
 # -------------------------------
 # Get Reviews
 # -------------------------------
-
 @router.get("/product/{product_id:int}")
 def read_reviews(product_id: int):
     try:
         df = load_reviews()
         reviews = df[df["product_id"] == product_id]
-
-        if reviews.empty:
-            return {"reviews": []}
 
         return {"reviews": reviews.to_dict(orient="records")}
 
@@ -71,9 +81,8 @@ def read_reviews(product_id: int):
 
 
 # -------------------------------
-# Create Review (User-aware)
+# Create Review
 # -------------------------------
-
 @router.post("/product/{product_id:int}")
 def create_review(product_id: int, review: ReviewIn):
     try:
@@ -85,23 +94,14 @@ def create_review(product_id: int, review: ReviewIn):
                 detail="Rating must be between 1 and 5."
             )
 
-        # ⭐ Priority: Logged-in frontend user
-        if review.user_id:
-            user_id = review.user_id
-        else:
-            # fallback synthetic user
-            user_id = random.choice(USER_POOL)
-
-        new_id = (
-            df["id"].max() + 1 if not df.empty else 1
-        )
+        user_id = normalize_user(review.user_id)
 
         new_review = {
-            "id": new_id,
-            "product_id": product_id,
+            "id": next_review_id(df),
+            "product_id": int(product_id),
             "user_id": user_id,
-            "rating": review.rating,
-            "comment": review.comment,
+            "rating": int(review.rating),
+            "comment": review.comment.strip(),
             "date": datetime.now().strftime("%Y-%m-%d"),
         }
 
@@ -117,13 +117,8 @@ def create_review(product_id: int, review: ReviewIn):
 # -------------------------------
 # Generate Dummy Reviews
 # -------------------------------
-
 @router.post("/generate-dummy-reviews")
 def generate_dummy_reviews(num_reviews: int = 500):
-    """
-    Creates synthetic reviews across many users/products
-    for recommender system training.
-    """
 
     try:
         df = load_reviews()
@@ -142,12 +137,8 @@ def generate_dummy_reviews(num_reviews: int = 500):
         ]
 
         for _ in range(num_reviews):
-            new_id = (
-                df["id"].max() + 1 if not df.empty else 1
-            )
-
             new_review = {
-                "id": new_id,
+                "id": next_review_id(df),
                 "product_id": random.randint(1, 10000),
                 "user_id": random.choice(USER_POOL),
                 "rating": random.randint(1, 5),
