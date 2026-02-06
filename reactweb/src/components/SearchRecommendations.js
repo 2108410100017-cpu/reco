@@ -1,166 +1,207 @@
 // src/components/SearchRecommendations.js
 
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import axios from "axios";
-import { useNavigate } from 'react-router-dom'; // 1. Import useNavigate
-import { useCart } from '../contexts/CartContext';
+import { useNavigate } from "react-router-dom";
+import { useCart } from "../contexts/CartContext";
 
 function SearchRecommendations({ API_BASE }) {
-    const { addToCart } = useCart(); 
-    const navigate = useNavigate(); // 2. Initialize navigate
+    const { addToCart } = useCart();
+    const navigate = useNavigate();
 
     const [recommendInput, setRecommendInput] = useState("");
-    const [recommendResult, setRecommendResult] = useState(null);
+    const [recommendResult, setRecommendResult] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState(null);
 
-    const handleRecommend = async () => {
+    // Optimized API call with useCallback
+    const handleRecommend = useCallback(async () => {
         if (!recommendInput.trim()) return;
-        
+
         setIsLoading(true);
+        setError(null);
+
         try {
-            const response = await axios.post(`${API_BASE}/recommend`, {
+            const { data } = await axios.post(`${API_BASE}/recommend`, {
                 query: recommendInput,
-                top_k: 10
+                top_k: 10,
             });
-            setRecommendResult(response.data);
+
+            setRecommendResult(data || []);
         } catch (err) {
             console.error(err);
-            setRecommendResult("Error in recommendation");
+            setError("Failed to fetch recommendations.");
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [recommendInput, API_BASE]);
 
-    // 3. Create the handleBuyNow function
-    const handleBuyNow = (product) => {
-        navigate(`/checkout/${product.id}`, { state: { product } });
-    };
+    // Navigate to similar products page
+    const handleSimilarClick = useCallback(
+        (productId) => {
+            navigate(`/similar/${productId}/0`);
+        },
+        [navigate]
+    );
+
+    const handleBuyNow = useCallback(
+        (product) => {
+            navigate(`/checkout/${product.id}`, { state: { product } });
+        },
+        [navigate]
+    );
 
     return (
-        <div style={{ marginBottom: "30px", backgroundColor: '#f9f9f9', padding: '20px', borderRadius: '8px' }}>
-            <h2 style={{ color: '#555' }}>Search for Recommendations</h2>
-            <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
+        <div style={container}>
+            <h2>Search Product Recommendations</h2>
+
+            {/* Search Input */}
+            <div style={searchBar}>
                 <input
                     type="text"
-                    placeholder="Enter your query (e.g., 'red dress')"
+                    placeholder="Search e.g. red dress, sneakers..."
                     value={recommendInput}
                     onChange={(e) => setRecommendInput(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleRecommend()}
-                    style={{ 
-                        flex: 1, 
-                        padding: '10px', 
-                        border: '1px solid #ddd', 
-                        borderRadius: '4px',
-                        fontSize: '16px'
-                    }}
+                    onKeyDown={(e) => e.key === "Enter" && handleRecommend()}
+                    style={inputStyle}
                 />
-                <button 
-                    onClick={handleRecommend} 
+
+                <button
+                    onClick={handleRecommend}
                     disabled={isLoading}
-                    style={{ 
-                        padding: '10px 20px', 
-                        backgroundColor: isLoading ? '#ccc' : '#4CAF50', 
-                        color: 'white', 
-                        border: 'none', 
-                        borderRadius: '4px',
-                        cursor: isLoading ? 'not-allowed' : 'pointer',
-                        fontSize: '16px'
-                    }}
+                    style={buttonStyle(isLoading)}
                 >
-                    {isLoading ? 'Searching...' : 'Get Recommendations'}
+                    {isLoading ? "Searching..." : "Search"}
                 </button>
             </div>
-            
-            {recommendResult && typeof recommendResult !== 'string' && (
-                <div>
-                    <h3 style={{ color: '#555', marginTop: '20px' }}>Recommendation Results</h3>
-                    <div style={{ 
-                        display: 'grid', 
-                        gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', 
-                        gap: '20px',
-                        marginTop: '15px'
-                    }}>
-                        {recommendResult.map((item, index) => (
-                            <div key={index} style={{ 
-                                border: '1px solid #ddd', 
-                                borderRadius: '8px', 
-                                padding: '15px',
-                                backgroundColor: 'white',
-                                boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
-                                transition: 'transform 0.2s',
-                                display: 'flex',
-                                flexDirection: 'column'
-                            }}>
-                                <img 
-                                    src={`${API_BASE}${item.image_url}`} 
-                                    alt={item.name} 
-                                    style={{ 
-                                        width: '100%', 
-                                        height: '200px', 
-                                        objectFit: 'cover',
-                                        borderRadius: '4px',
-                                        marginBottom: '10px'
-                                    }}
-                                    onError={(e) => {
-                                        e.target.onerror = null;
-                                        e.target.src = 'https://picsum.photos/seed/fallback/200/200.jpg';
-                                    }}
-                                />
-                                <h4 style={{ margin: '0 0 5px 0', fontSize: '16px', color: '#333' }}>{item.name}</h4>
-                                <p style={{ margin: '0', fontSize: '14px', color: '#666' }}>ID: {item.id}</p>
-                                <p style={{ margin: '5px 0 0 0', fontSize: '14px', color: '#0066cc' }}>
-                                    Similarity: {(item.score * 100).toFixed(2)}%
-                                </p>
-                                <div style={{ marginTop: 'auto', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
-                                    <p style={{ 
-                                        margin: 0, 
-                                        fontSize: '18px', 
-                                        fontWeight: 'bold', 
-                                        color: '#e53935' 
-                                    }}>
-                                        ${item.price ? item.price.toFixed(2) : '0.00'}
-                                    </p>
-                                    <div style={{ display: 'flex', gap: '8px' }}>
-                                        <button 
-                                            onClick={() => addToCart(item)}
-                                            style={{
-                                                padding: '6px 12px',
-                                                backgroundColor: '#FF9800',
-                                                color: 'white',
-                                                border: 'none',
-                                                borderRadius: '4px',
-                                                cursor: 'pointer'
-                                            }}
-                                        >
-                                            Add to Cart
-                                        </button>
-                                        {/* 4. Add the new "Buy" button */}
-                                        <button 
-                                            onClick={() => handleBuyNow(item)}
-                                            style={{
-                                                padding: '6px 12px',
-                                                backgroundColor: '#4CAF50',
-                                                color: 'white',
-                                                border: 'none',
-                                                borderRadius: '4px',
-                                                cursor: 'pointer'
-                                            }}
-                                        >
-                                            Buy
-                                        </button>
-                                    </div>
-                                </div>
+
+            {error && <p style={{ color: "red" }}>{error}</p>}
+
+            {/* Results */}
+            {recommendResult.length > 0 && (
+                <div style={grid}>
+                    {recommendResult.map((item) => (
+                        <div key={item.id} style={card}>
+                            
+                            {/* CLICKABLE IMAGE → Similar Products */}
+                            <img
+                                src={`${API_BASE}${item.image_url}`}
+                                alt={item.name}
+                                loading="lazy"
+                                onClick={() => handleSimilarClick(item.id)}
+                                style={imageStyle}
+                                onError={(e) => {
+                                    e.target.src =
+                                        "https://picsum.photos/200/200";
+                                }}
+                            />
+
+                            <h4>{item.name}</h4>
+
+                            <p>ID: {item.id}</p>
+
+                            <p style={{ color: "#2196F3" }}>
+                                Similarity: {(item.score * 100).toFixed(1)}%
+                            </p>
+
+                            <h3 style={{ color: "#e53935" }}>
+                                ${item.price?.toFixed(2) || "0.00"}
+                            </h3>
+
+                            <div style={btnRow}>
+                                <button
+                                    style={cartBtn}
+                                    onClick={() => addToCart(item)}
+                                >
+                                    Add Cart
+                                </button>
+
+                                <button
+                                    style={buyBtn}
+                                    onClick={() => handleBuyNow(item)}
+                                >
+                                    Buy
+                                </button>
                             </div>
-                        ))}
-                    </div>
+                        </div>
+                    ))}
                 </div>
-            )}
-            
-            {recommendResult && typeof recommendResult === 'string' && (
-                <div style={{ color: 'red', marginTop: '10px' }}>{recommendResult}</div>
             )}
         </div>
     );
 }
 
 export default SearchRecommendations;
+
+
+/* ================= STYLES ================= */
+
+const container = {
+    marginBottom: "30px",
+    padding: "20px",
+    background: "#f9f9f9",
+    borderRadius: "8px",
+};
+
+const searchBar = {
+    display: "flex",
+    gap: "10px",
+    marginBottom: "20px",
+};
+
+const inputStyle = {
+    flex: 1,
+    padding: "10px",
+    fontSize: "16px",
+};
+
+const buttonStyle = (loading) => ({
+    padding: "10px 20px",
+    background: loading ? "#ccc" : "#4CAF50",
+    color: "#fff",
+    border: "none",
+    cursor: loading ? "not-allowed" : "pointer",
+});
+
+const grid = {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))",
+    gap: "20px",
+};
+
+const card = {
+    background: "#fff",
+    padding: "15px",
+    borderRadius: "8px",
+    boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+};
+
+const imageStyle = {
+    width: "100%",
+    height: "200px",
+    objectFit: "cover",
+    borderRadius: "6px",
+    cursor: "pointer",
+};
+
+const btnRow = {
+    display: "flex",
+    justifyContent: "space-between",
+    marginTop: "10px",
+};
+
+const cartBtn = {
+    background: "#FF9800",
+    color: "#fff",
+    border: "none",
+    padding: "6px 12px",
+    cursor: "pointer",
+};
+
+const buyBtn = {
+    background: "#4CAF50",
+    color: "#fff",
+    border: "none",
+    padding: "6px 12px",
+    cursor: "pointer",
+};
