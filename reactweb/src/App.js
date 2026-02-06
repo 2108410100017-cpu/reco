@@ -8,6 +8,7 @@ import { CartProvider } from './contexts/CartContext';
 import HomePage from './pages/HomePage';
 import CartPage from './pages/CartPage';
 import SimilarProductsPage from './pages/SimilarProductsPage';
+import LoginPage from "./pages/LoginPage";
 
 // Components / Pages
 import CheckoutPage from './components/CheckoutPage';
@@ -59,6 +60,8 @@ function App() {
               path="/add-product"
               element={<AddProduct API_BASE={API_BASE} />}
             />
+            {/*Login*/}
+            <Route path="/login" element={<LoginPage />} />
 
           </Routes>
         </main>

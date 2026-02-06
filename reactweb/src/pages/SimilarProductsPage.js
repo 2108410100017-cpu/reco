@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import ProductCard from '../components/ProductCard';
+import ProductReviews from "../components/ProductReviews";
 
 const SimilarProductsPage = () => {
     // Get both productId and depth from the URL parameters

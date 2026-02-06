@@ -4,6 +4,7 @@ import React, { useState, useCallback } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../contexts/CartContext";
+import ProductReviews from "./ProductReviews";
 
 function SearchRecommendations({ API_BASE }) {
     const { addToCart } = useCart();
@@ -13,8 +14,8 @@ function SearchRecommendations({ API_BASE }) {
     const [recommendResult, setRecommendResult] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [activeReviewProduct, setActiveReviewProduct] = useState(null);
 
-    // Optimized API call with useCallback
     const handleRecommend = useCallback(async () => {
         if (!recommendInput.trim()) return;
 
@@ -36,7 +37,6 @@ function SearchRecommendations({ API_BASE }) {
         }
     }, [recommendInput, API_BASE]);
 
-    // Navigate to similar products page
     const handleSimilarClick = useCallback(
         (productId) => {
             navigate(`/similar/${productId}/0`);
@@ -45,17 +45,24 @@ function SearchRecommendations({ API_BASE }) {
     );
 
     const handleBuyNow = useCallback(
-        (product) => {
+        (product, e) => {
+            e.stopPropagation();
             navigate(`/checkout/${product.id}`, { state: { product } });
         },
         [navigate]
     );
 
+    const toggleReviews = (e, productId) => {
+        e.stopPropagation();
+        setActiveReviewProduct(prev =>
+            prev === productId ? null : productId
+        );
+    };
+
     return (
         <div style={container}>
             <h2>Search Product Recommendations</h2>
 
-            {/* Search Input */}
             <div style={searchBar}>
                 <input
                     type="text"
@@ -77,13 +84,12 @@ function SearchRecommendations({ API_BASE }) {
 
             {error && <p style={{ color: "red" }}>{error}</p>}
 
-            {/* Results */}
             {recommendResult.length > 0 && (
                 <div style={grid}>
                     {recommendResult.map((item) => (
                         <div key={item.id} style={card}>
                             
-                            {/* CLICKABLE IMAGE → Similar Products */}
+                            {/* Click image for similar products */}
                             <img
                                 src={`${API_BASE}${item.image_url}`}
                                 alt={item.name}
@@ -97,7 +103,6 @@ function SearchRecommendations({ API_BASE }) {
                             />
 
                             <h4>{item.name}</h4>
-
                             <p>ID: {item.id}</p>
 
                             <p style={{ color: "#2196F3" }}>
@@ -111,18 +116,37 @@ function SearchRecommendations({ API_BASE }) {
                             <div style={btnRow}>
                                 <button
                                     style={cartBtn}
-                                    onClick={() => addToCart(item)}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        addToCart(item);
+                                    }}
                                 >
                                     Add Cart
                                 </button>
 
                                 <button
                                     style={buyBtn}
-                                    onClick={() => handleBuyNow(item)}
+                                    onClick={(e) => handleBuyNow(item, e)}
                                 >
                                     Buy
                                 </button>
+
+                                {/* NEW REVIEW BUTTON */}
+                                <button
+                                    style={reviewBtn}
+                                    onClick={(e) => toggleReviews(e, item.id)}
+                                >
+                                    ⭐ Review
+                                </button>
                             </div>
+
+                            {/* Reviews toggle */}
+                            {activeReviewProduct === item.id && (
+                                <ProductReviews
+                                    productId={item.id}
+                                    API_BASE={API_BASE}
+                                />
+                            )}
                         </div>
                     ))}
                 </div>
@@ -160,7 +184,6 @@ const buttonStyle = (loading) => ({
     background: loading ? "#ccc" : "#4CAF50",
     color: "#fff",
     border: "none",
-    cursor: loading ? "not-allowed" : "pointer",
 });
 
 const grid = {
@@ -186,7 +209,7 @@ const imageStyle = {
 
 const btnRow = {
     display: "flex",
-    justifyContent: "space-between",
+    gap: "6px",
     marginTop: "10px",
 };
 
@@ -195,7 +218,6 @@ const cartBtn = {
     color: "#fff",
     border: "none",
     padding: "6px 12px",
-    cursor: "pointer",
 };
 
 const buyBtn = {
@@ -203,5 +225,11 @@ const buyBtn = {
     color: "#fff",
     border: "none",
     padding: "6px 12px",
-    cursor: "pointer",
+};
+
+const reviewBtn = {
+    background: "#673AB7",
+    color: "#fff",
+    border: "none",
+    padding: "6px 12px",
 };
