@@ -10,6 +10,7 @@ from typing import Optional
 from config import IMAGE_DIR, BUSINESS_PRODUCTS_PATH
 from models import RecommendRequest, BusinessProduct
 from database import get_product_by_id 
+import math
 
 router = APIRouter(tags=["products"])
 
@@ -42,10 +43,14 @@ def test_endpoint():
 def recommend(req: RecommendRequest):
     from database import metadata, id_list, image_embs
     import clip
+    import pandas as pd
+    import math
+    from datetime import datetime
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model, _ = clip.load("ViT-B/32", device=device)
 
+    # Encode query
     tokens = clip.tokenize([req.query]).to(device)
     with torch.no_grad():
         text_embedding = model.encode_text(tokens)
@@ -53,10 +58,12 @@ def recommend(req: RecommendRequest):
 
     text_embedding = text_embedding.cpu()
 
+    # Similarity
     sims = (text_embedding @ image_embs.T).squeeze(0)
     top_k = sims.topk(req.top_k)
 
     results = []
+    dates = []
 
     for score, idx in zip(top_k.values, top_k.indices):
         pid = id_list[idx]
@@ -70,10 +77,21 @@ def recommend(req: RecommendRequest):
         if pd.isna(price):
             price = 0.0
 
-        image_url = ""
-        if 'business_id' in row and pd.notna(row['business_id']):
-            path = row['image_path']
-            image_url = f"/{path}" if path.startswith('images/') else f"/images/{path}"
+        # SAFE DATE PARSE
+        added_date = pd.to_datetime(
+            row.get("added_date", "1970-01-01"),
+            errors="coerce"
+        )
+
+        if pd.isna(added_date):
+            added_date = pd.to_datetime("1970-01-01")
+
+        dates.append(added_date)
+
+        # Image URL
+        if "business_id" in row and pd.notna(row["business_id"]):
+            path = row["image_path"]
+            image_url = f"/{path}" if path.startswith("images/") else f"/images/{path}"
         else:
             image_url = f"/images/{pid}.jpg"
 
@@ -82,8 +100,45 @@ def recommend(req: RecommendRequest):
             "name": row.get("name", ""),
             "price": price,
             "score": float(score),
-            "image_url": image_url
+            "image_url": image_url,
+            "added_date": added_date
         })
+
+    # -------- HYBRID RANKING --------
+    if results:
+        max_sim = max(r["score"] for r in results)
+        min_date = min(dates)
+        max_date = max(dates)
+
+        for r in results:
+            sim = r["score"]
+
+            # Freshness score
+            if max_date != min_date:
+                freshness = (
+                    (r["added_date"] - min_date).total_seconds()
+                    / (max_date - min_date).total_seconds()
+                )
+            else:
+                freshness = 0.0
+
+            # Hybrid weighting
+            if abs(max_sim - sim) <= 0.02 * max_sim:
+                final_score = 0.85 * sim + 0.15 * freshness
+            else:
+                final_score = sim
+
+            # Prevent NaN
+            if math.isnan(final_score):
+                final_score = 0.0
+
+            r["final_score"] = float(final_score)
+
+        results.sort(key=lambda x: x["final_score"], reverse=True)
+
+    # Convert datetime → string (IMPORTANT)
+    for r in results:
+        r["added_date"] = r["added_date"].strftime("%Y-%m-%d %H:%M:%S")
 
     return JSONResponse(results)
 

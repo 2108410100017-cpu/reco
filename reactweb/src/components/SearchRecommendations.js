@@ -12,6 +12,7 @@ function SearchRecommendations({ API_BASE }) {
 
     const [recommendInput, setRecommendInput] = useState("");
     const [recommendResult, setRecommendResult] = useState([]);
+    const [visibleCount, setVisibleCount] = useState(10); // ⭐ pagination
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
     const [activeReviewProduct, setActiveReviewProduct] = useState(null);
@@ -28,7 +29,14 @@ function SearchRecommendations({ API_BASE }) {
                 top_k: 50,
             });
 
-            setRecommendResult(data || []);
+            // ⭐ PRIORITIZE LATEST PRODUCTS
+            const sorted = [...(data || [])].sort((a, b) => {
+                if (!a.added_date || !b.added_date) return 0;
+                return new Date(b.added_date) - new Date(a.added_date);
+            });
+
+            setRecommendResult(sorted);
+            setVisibleCount(10); // reset pagination
         } catch (err) {
             console.error(err);
             setError("Failed to fetch recommendations.");
@@ -38,9 +46,7 @@ function SearchRecommendations({ API_BASE }) {
     }, [recommendInput, API_BASE]);
 
     const handleSimilarClick = useCallback(
-        (productId) => {
-            navigate(`/similar/${productId}/0`);
-        },
+        (productId) => navigate(`/similar/${productId}/0`),
         [navigate]
     );
 
@@ -85,71 +91,88 @@ function SearchRecommendations({ API_BASE }) {
             {error && <p style={{ color: "red" }}>{error}</p>}
 
             {recommendResult.length > 0 && (
-                <div style={grid}>
-                    {recommendResult.map((item) => (
-                        <div key={item.id} style={card}>
-                            
-                            {/* Click image for similar products */}
-                            <img
-                                src={`${API_BASE}${item.image_url}`}
-                                alt={item.name}
-                                loading="lazy"
-                                onClick={() => handleSimilarClick(item.id)}
-                                style={imageStyle}
-                                onError={(e) => {
-                                    e.target.src =
-                                        "https://picsum.photos/200/200";
-                                }}
-                            />
-
-                            <h4>{item.name}</h4>
-                            <p>ID: {item.id}</p>
-
-                            <p style={{ color: "#2196F3" }}>
-                                Similarity: {(item.score * 100).toFixed(1)}%
-                            </p>
-
-                            <h3 style={{ color: "#e53935" }}>
-                                ${item.price?.toFixed(2) || "0.00"}
-                            </h3>
-
-                            <div style={btnRow}>
-                                <button
-                                    style={cartBtn}
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        addToCart(item);
+                <>
+                    <div style={grid}>
+                        {recommendResult.slice(0, visibleCount).map(item => (
+                            <div key={item.id} style={card}>
+                                
+                                <img
+                                    src={`${API_BASE}${item.image_url}`}
+                                    alt={item.name}
+                                    loading="lazy"
+                                    onClick={() => handleSimilarClick(item.id)}
+                                    style={imageStyle}
+                                    onError={(e) => {
+                                        e.target.src =
+                                            "https://picsum.photos/200/200";
                                     }}
-                                >
-                                    Add Cart
-                                </button>
-
-                                <button
-                                    style={buyBtn}
-                                    onClick={(e) => handleBuyNow(item, e)}
-                                >
-                                    Buy
-                                </button>
-
-                                {/* NEW REVIEW BUTTON */}
-                                <button
-                                    style={reviewBtn}
-                                    onClick={(e) => toggleReviews(e, item.id)}
-                                >
-                                    ⭐ Review
-                                </button>
-                            </div>
-
-                            {/* Reviews toggle */}
-                            {activeReviewProduct === item.id && (
-                                <ProductReviews
-                                    productId={item.id}
-                                    API_BASE={API_BASE}
                                 />
-                            )}
+
+                                <h4>{item.name}</h4>
+                                <p>ID: {item.id}</p>
+
+                                <p style={{ color: "#2196F3" }}>
+                                    Similarity: {(item.score * 100).toFixed(1)}%
+                                </p>
+
+                                <h3 style={{ color: "#e53935" }}>
+                                    ${item.price?.toFixed(2) || "0.00"}
+                                </h3>
+
+                                <div style={btnRow}>
+                                    <button
+                                        style={cartBtn}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            addToCart(item);
+                                        }}
+                                    >
+                                        Add Cart
+                                    </button>
+
+                                    <button
+                                        style={buyBtn}
+                                        onClick={(e) =>
+                                            handleBuyNow(item, e)
+                                        }
+                                    >
+                                        Buy
+                                    </button>
+
+                                    <button
+                                        style={reviewBtn}
+                                        onClick={(e) =>
+                                            toggleReviews(e, item.id)
+                                        }
+                                    >
+                                        ⭐ Review
+                                    </button>
+                                </div>
+
+                                {activeReviewProduct === item.id && (
+                                    <ProductReviews
+                                        productId={item.id}
+                                        API_BASE={API_BASE}
+                                    />
+                                )}
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* ⭐ SEE MORE BUTTON */}
+                    {visibleCount < recommendResult.length && (
+                        <div style={{ textAlign: "center", marginTop: "20px" }}>
+                            <button
+                                onClick={() =>
+                                    setVisibleCount(prev => prev + 10)
+                                }
+                                style={seeMoreBtn}
+                            >
+                                See More
+                            </button>
                         </div>
-                    ))}
-                </div>
+                    )}
+                </>
             )}
         </div>
     );
@@ -232,4 +255,13 @@ const reviewBtn = {
     color: "#fff",
     border: "none",
     padding: "6px 12px",
+};
+
+const seeMoreBtn = {
+    padding: "10px 20px",
+    background: "#2196F3",
+    color: "#fff",
+    border: "none",
+    borderRadius: "6px",
+    cursor: "pointer",
 };

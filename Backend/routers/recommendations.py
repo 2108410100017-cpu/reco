@@ -106,7 +106,8 @@ def find_similar_products(product_id: int, top_k: int = 10):
             "name": row.get("name", ""),
             "price": price,
             "score": float(score),
-            "image_url": image_url
+            "image_url": image_url,
+            "added_date": row.get("added_date", "2026-01-01")
         })
 
     return results
