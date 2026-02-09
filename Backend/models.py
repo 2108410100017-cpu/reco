@@ -7,7 +7,7 @@ from typing import List, Optional
 # -------------------------------
 class RecommendRequest(BaseModel):
     query: str
-    top_k: int = 10
+    top_k: int = 50
 
     # NEW: Optional user identity
     user_id: Optional[str] = None

@@ -25,7 +25,7 @@ function SearchRecommendations({ API_BASE }) {
         try {
             const { data } = await axios.post(`${API_BASE}/recommend`, {
                 query: recommendInput,
-                top_k: 10,
+                top_k: 50,
             });
 
             setRecommendResult(data || []);
