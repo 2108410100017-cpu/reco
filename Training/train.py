@@ -12,7 +12,7 @@ IMAGE_DIR = "images"
 CSV_PATH = "styles.csv"
 OUTPUT_EMB_PATH = "embeddings.pt"
 OUTPUT_META_PATH = "metadata.csv"
-SAMPLE_SIZE = 3000
+SAMPLE_SIZE = 1500
 
 # ==========================
 # LOAD DATA
