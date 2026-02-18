@@ -12,7 +12,9 @@ const SimilarProductsPage = () => {
     const [baseProduct, setBaseProduct] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
 
-    const API_BASE = "http://localhost:8000";
+    // const API_BASE = "http://localhost:8000";
+    const API_BASE = "https://reco-1-j47k.onrender.com";
+    
     const MAX_DEPTH = 3;
 
     useEffect(() => {

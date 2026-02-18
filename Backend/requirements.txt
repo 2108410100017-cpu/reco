@@ -1,7 +1,8 @@
 # Web Framework
 fastapi
 uvicorn[standard]
-
+pandas
+numpy
 # Database
 sqlalchemy
 alembic

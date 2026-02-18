@@ -9,7 +9,9 @@ export const CartProvider = ({ children }) => {
   const [totalPrice, setTotalPrice] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
 
-  const API_BASE = "http://localhost:8000";
+  // const API_BASE = "http://localhost:8000";
+  const API_BASE = "https://reco-1-j47k.onrender.com";
+  
 
   // ⭐ Get logged user ID (IMPORTANT)
   const getUserId = () => {

@@ -1,7 +1,9 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://localhost:8000"
+  // baseURL: "http://localhost:8000"
+  baseURL: "https://reco-1-j47k.onrender.com"
+  
 });
 
 api.interceptors.request.use((config) => {
