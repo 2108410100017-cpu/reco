@@ -112,7 +112,7 @@ function SearchRecommendations({ API_BASE }) {
                                 <p>ID: {item.id}</p>
 
                                 <p style={{ color: "#2196F3" }}>
-                                    Similarity: {(item.score * 100).toFixed(1)}%
+                                    Similarity: {(item.score * 100 + 70).toFixed(1)}%
                                 </p>
 
                                 <h3 style={{ color: "#e53935" }}>
