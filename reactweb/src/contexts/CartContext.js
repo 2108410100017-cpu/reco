@@ -1,5 +1,5 @@
 // src/contexts/CartContext.js
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback  } from 'react';
 import api from "../utils/api";
 
 const CartContext = createContext();
@@ -18,28 +18,33 @@ export const CartProvider = ({ children }) => {
     return localStorage.getItem("user_id") || "guest_user";
   };
 
-  useEffect(() => {
-    fetchCart();
-  }, []);
 
-  const fetchCart = async () => {
-    setIsLoading(true);
-    try {
-      const response = await api.get(`${API_BASE}/cart/`, {
-  headers: {
-    "X-User-ID": getUserId()
+const fetchCart = useCallback(async () => {
+  setIsLoading(true);
+  try {
+    const response = await api.get(`${API_BASE}/cart/`, {
+      headers: {
+        "X-User-ID": getUserId()
+      }
+    });
+
+    setCartItems(response.data.items);
+    setTotalPrice(response.data.total_price);
+
+  } catch (error) {
+    console.error("Fetch cart error:", error);
+  } finally {
+    setIsLoading(false);
   }
-});
+}, [API_BASE]);
 
-      setCartItems(response.data.items);
-      setTotalPrice(response.data.total_price);
+useEffect(() => {
+  fetchCart();
+}, [fetchCart]);
 
-    } catch (error) {
-      console.error("Fetch cart error:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+
+
+
 
   const addToCart = async (product) => {
     setIsLoading(true);
