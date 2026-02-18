@@ -17,14 +17,11 @@ pip-log.txt
 pip-delete-this-directory.txt
 
 # Torch / Models
-*.pt
 *.pth
 *.bin
 *.onnx
 models/
 checkpoints/
-embeddings.pt
-training/embeddings.pt
 training/images/
 
 # Data / CSV / Cache
