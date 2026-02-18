@@ -1,7 +1,8 @@
 # Web Framework
 fastapi
 uvicorn[standard]
-clip
+
+git+https://github.com/openai/CLIP.git
 # Data Processing
 pandas
 numpy
