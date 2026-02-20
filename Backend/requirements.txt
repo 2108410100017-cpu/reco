@@ -16,8 +16,7 @@ passlib[bcrypt]
 python-multipart
 
 # ML
-torch==2.1.0
-
+torch==2.1.0+cpu
 
 # Data Validation
 pydantic
