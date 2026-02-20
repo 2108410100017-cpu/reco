@@ -4,8 +4,7 @@ uvicorn[standard]
 
 # Data Processing
 pandas
-numpy
-
+numpy==1.26.4
 # Database
 sqlalchemy
 alembic
