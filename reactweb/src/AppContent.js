@@ -13,7 +13,9 @@ const AppContent = () => {
     // This works because AppContent is a child of CartProvider.
     const { getItemCount } = useCart(); 
     
-    const API_BASE = "http://localhost:8000";
+    // const API_BASE = "http://localhost:8000";
+    const API_BASE = "https://reco-3-4mat.onrender.com";
+
     const [imageUrl, setImageUrl] = useState(null);
     const [showAddProduct, setShowAddProduct] = useState(false);
 
