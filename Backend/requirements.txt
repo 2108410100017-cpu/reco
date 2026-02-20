@@ -21,6 +21,8 @@ torch==2.0.1+cpu
 # Data Validation
 pydantic
 
+git+https://github.com/openai/CLIP.git
+
 # HTTP Client
 httpx
 requests

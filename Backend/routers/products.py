@@ -1,16 +1,13 @@
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Request
 from fastapi.responses import JSONResponse, FileResponse
-import pandas as pd
 import torch
 import shutil
 import os
 from datetime import datetime
 from typing import Optional
-import clip
 from config import IMAGE_DIR, BUSINESS_PRODUCTS_PATH
 from models import RecommendRequest, BusinessProduct
 from database import get_product_by_id 
-import math
 
 router = APIRouter(tags=["products"])
 
