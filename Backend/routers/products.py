@@ -6,7 +6,7 @@ import shutil
 import os
 from datetime import datetime
 from typing import Optional
-
+import clip
 from config import IMAGE_DIR, BUSINESS_PRODUCTS_PATH
 from models import RecommendRequest, BusinessProduct
 from database import get_product_by_id 
