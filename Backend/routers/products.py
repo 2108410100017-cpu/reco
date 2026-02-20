@@ -39,108 +39,130 @@ def test_endpoint():
 # -------------------------------
 # TEXT RECOMMENDATION
 # -------------------------------
+from database import metadata, id_list, image_embs
+import math
+from fastapi.responses import JSONResponse
+from datetime import datetime
+import torch
+import clip
+import pandas as pd
+import math
+# Force embeddings to CPU (important for Render)
+image_embs = image_embs.cpu()
+
+# Load CLIP model once (NOT inside route)
+device = "cuda" if torch.cuda.is_available() else "cpu"
+model, _ = clip.load("ViT-B/32", device=device)
+model.eval()
 @router.post("/recommend")
 def recommend(req: RecommendRequest):
-    from database import metadata, id_list, image_embs
-    import clip
-    import pandas as pd
-    import math
-    from datetime import datetime
+    try:
+        # Encode query
+        tokens = clip.tokenize([req.query]).to(device)
 
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    model, _ = clip.load("ViT-B/32", device=device)
+        with torch.no_grad():
+            text_embedding = model.encode_text(tokens)
+            text_embedding = text_embedding / text_embedding.norm(dim=-1, keepdim=True)
 
-    # Encode query
-    tokens = clip.tokenize([req.query]).to(device)
-    with torch.no_grad():
-        text_embedding = model.encode_text(tokens)
-        text_embedding = text_embedding / text_embedding.norm(dim=-1, keepdim=True)
+        text_embedding = text_embedding.cpu()
 
-    text_embedding = text_embedding.cpu()
+        # Similarity
+        sims = (text_embedding @ image_embs.T).squeeze(0)
 
-    # Similarity
-    sims = (text_embedding @ image_embs.T).squeeze(0)
-    top_k = sims.topk(req.top_k)
+        # Safe top_k
+        k = min(req.top_k, sims.shape[0])
+        top_k = sims.topk(k)
 
-    results = []
-    dates = []
+        results = []
+        dates = []
 
-    for score, idx in zip(top_k.values, top_k.indices):
-        pid = id_list[idx]
+        for score, idx in zip(top_k.values, top_k.indices):
+            idx = idx.item()  # FIX tensor indexing
+            pid = id_list[idx]
 
-        if pid not in metadata.index:
-            continue
+            if pid not in metadata.index:
+                continue
 
-        row = metadata.loc[pid]
+            row = metadata.loc[pid]
 
-        price = float(row.get("price", 0.0))
-        if pd.isna(price):
-            price = 0.0
+            price = float(row.get("price", 0.0))
+            if pd.isna(price):
+                price = 0.0
 
-        # SAFE DATE PARSE
-        added_date = pd.to_datetime(
-            row.get("added_date", "1970-01-01"),
-            errors="coerce"
-        )
+            # Safe date parsing
+            added_date = pd.to_datetime(
+                row.get("added_date", "1970-01-01"),
+                errors="coerce"
+            )
 
-        if pd.isna(added_date):
-            added_date = pd.to_datetime("1970-01-01")
+            if pd.isna(added_date):
+                added_date = pd.to_datetime("1970-01-01")
 
-        dates.append(added_date)
+            dates.append(added_date)
 
-        # Image URL
-        if "business_id" in row and pd.notna(row["business_id"]):
-            path = row["image_path"]
-            image_url = f"/{path}" if path.startswith("images/") else f"/images/{path}"
-        else:
-            image_url = f"/images/{pid}.jpg"
+            # Image URL logic
+            if "business_id" in row and pd.notna(row["business_id"]):
+                path = row.get("image_path", "")
+                if path.startswith("images/"):
+                    image_url = f"/{path}"
+                else:
+                    image_url = f"/images/{path}"
+            else:
+                image_url = f"/images/{pid}.jpg"
 
-        results.append({
-            "id": int(pid),
-            "name": row.get("name", ""),
-            "price": price,
-            "score": float(score),
-            "image_url": image_url,
-            "added_date": added_date
-        })
+            results.append({
+                "id": int(pid),
+                "name": row.get("name", ""),
+                "price": price,
+                "score": float(score),
+                "image_url": image_url,
+                "added_date": added_date
+            })
 
-    # -------- HYBRID RANKING --------
-    if results:
-        max_sim = max(r["score"] for r in results)
-        min_date = min(dates)
-        max_date = max(dates)
+        # -------- HYBRID RANKING --------
+        if results:
+            max_sim = max(r["score"] for r in results)
+            min_date = min(dates)
+            max_date = max(dates)
 
+            for r in results:
+                sim = r["score"]
+
+                # Freshness score
+                if max_date != min_date:
+                    freshness = (
+                        (r["added_date"] - min_date).total_seconds()
+                        / (max_date - min_date).total_seconds()
+                    )
+                else:
+                    freshness = 0.0
+
+                # Hybrid weighting
+                if max_sim != 0 and abs(max_sim - sim) <= 0.02 * max_sim:
+                    final_score = 0.85 * sim + 0.15 * freshness
+                else:
+                    final_score = sim
+
+                if math.isnan(final_score):
+                    final_score = 0.0
+
+                r["final_score"] = float(final_score)
+
+            results.sort(key=lambda x: x["final_score"], reverse=True)
+
+        # Convert datetime → string for JSON
         for r in results:
-            sim = r["score"]
+            r["added_date"] = r["added_date"].strftime("%Y-%m-%d %H:%M:%S")
 
-            # Freshness score
-            if max_date != min_date:
-                freshness = (
-                    (r["added_date"] - min_date).total_seconds()
-                    / (max_date - min_date).total_seconds()
-                )
-            else:
-                freshness = 0.0
+        return JSONResponse(content=results)
 
-            # Hybrid weighting
-            if abs(max_sim - sim) <= 0.02 * max_sim:
-                final_score = 0.85 * sim + 0.15 * freshness
-            else:
-                final_score = sim
-
-            # Prevent NaN
-            if math.isnan(final_score):
-                final_score = 0.0
-
-            r["final_score"] = float(final_score)
-
-        results.sort(key=lambda x: x["final_score"], reverse=True)
-
-    # Convert datetime → string (IMPORTANT)
-    for r in results:
-        r["added_date"] = r["added_date"].strftime("%Y-%m-%d %H:%M:%S")
-
-    return JSONResponse(results)
+    except Exception as e:
+        import traceback
+        print("ERROR:", traceback.format_exc())
+        return JSONResponse(
+            status_code=500,
+            content={"error": str(e)}
+        )
 
 
 # -------------------------------
