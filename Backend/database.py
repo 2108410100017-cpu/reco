@@ -94,7 +94,7 @@ def initialize_data():
     if not os.path.exists(EMB_PATH):
         raise RuntimeError("embeddings.pt missing. Run retrain first.")
 
-    emb = torch.load(EMB_PATH)
+    emb = torch.load(EMB_PATH, map_location="cpu")
 
     image_embs = emb['image_embeddings']
     text_embs = emb['text_embeddings']

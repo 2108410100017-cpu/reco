@@ -3,10 +3,16 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 import os
 
-from routers import reviews_clean
 from config import IMAGE_DIR
 from database import initialize_data
-from routers import cart, products, admin, debug, recommendations
+
+# -------------------------------
+# INITIALIZE DATA FIRST (CRITICAL FIX)
+# -------------------------------
+initialize_data()
+
+# Now import routers AFTER data is initialized
+from routers import cart, products, admin, debug, recommendations, reviews_clean
 
 
 # -------------------------------
@@ -20,8 +26,10 @@ app = FastAPI(title="Image Recommendation API")
 # -------------------------------
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000","https://reco-2-diph.onrender.com"],
-    # ,"https://reco-2-diph.onrender.com"
+    allow_origins=[
+        "http://localhost:3000",
+        "https://reco-2-diph.onrender.com"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -29,7 +37,7 @@ app.add_middleware(
 
 
 # -------------------------------
-# USER IDENTITY MIDDLEWARE (NEW)
+# USER IDENTITY MIDDLEWARE
 # -------------------------------
 @app.middleware("http")
 async def attach_user_identity(request: Request, call_next):
@@ -63,26 +71,15 @@ if os.path.exists(IMAGE_DIR):
 # ROUTERS
 # -------------------------------
 
-# Core products router
 app.include_router(products.router, tags=["products"])
 
-# Recommendation router
 app.include_router(
     recommendations.router,
     prefix="/products",
     tags=["recommendations"]
 )
 
-# Other routers
 app.include_router(cart.router, prefix="/cart", tags=["cart"])
 app.include_router(admin.router, tags=["admin"])
 app.include_router(debug.router, prefix="/debug", tags=["debug"])
 app.include_router(reviews_clean.router, tags=["reviews-clean"])
-
-
-# -------------------------------
-# STARTUP INIT
-# -------------------------------
-@app.on_event("startup")
-def on_startup():
-    initialize_data()
