@@ -16,8 +16,8 @@ passlib[bcrypt]
 python-multipart
 
 # ML
-torch==2.1.0+cpu
-
+torch==2.0.1
+--index-url https://download.pytorch.org/whl/cpu
 # Data Validation
 pydantic
 
