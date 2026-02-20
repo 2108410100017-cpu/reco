@@ -14,7 +14,7 @@ import ProductsYouLike from '../components/ProductsYouLike'; // NEW IMPORT
 const HomePage = () => {
     const { getItemCount } = useCart();
     // const API_BASE = "http://localhost:8000";
-    const API_BASE = "https://reco-1-j47k.onrender.com";
+    const API_BASE = "https://reco-3-4mat.onrender.com";
     const [imageUrl, setImageUrl] = useState(null);
     const [showAddProduct, setShowAddProduct] = useState(false);
 

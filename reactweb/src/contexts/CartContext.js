@@ -10,7 +10,7 @@ export const CartProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(false);
 
   // const API_BASE = "http://localhost:8000";
-  const API_BASE = "https://reco-1-j47k.onrender.com";
+  const API_BASE = "https://reco-3-4mat.onrender.com";
   
 
   // ⭐ Get logged user ID (IMPORTANT)
